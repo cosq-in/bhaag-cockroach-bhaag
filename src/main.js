@@ -2,6 +2,7 @@ import { createGame, applyIntent, step } from './game.js';
 import { createRenderer, Stage3D } from './scene.js';
 import { drawHud } from './hud.js';
 import { attachInput } from './input.js';
+import { loadKit } from './kit.js';
 import { initAudio, sfx, toggleMute, setPaused } from './audio.js';
 
 const HI_KEY = 'delhiRunner3dHi';
@@ -38,6 +39,8 @@ function resize() {
 window.addEventListener('resize', resize);
 window.addEventListener('orientationchange', () => setTimeout(resize, 150));
 resize();
+
+loadKit();
 
 const game = createGame(Math.random, loadHi());
 

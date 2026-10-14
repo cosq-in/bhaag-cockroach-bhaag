@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mat, canvasTex, makeBus, makeRamp, makeObstacle, makePickup } from './models.js';
+import { kit, CITY, cloneFit } from './kit.js';
 
 export const LANE_W = 2;
 export const laneX = (lane) => (lane - 1) * LANE_W;
@@ -69,8 +70,9 @@ export class Scenery {
         const b = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), mat('#4a2b45'));
         const p = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.7), new THREE.MeshBasicMaterial({ color: '#d9b382', side: THREE.DoubleSide }));
         p.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
-        this.group.add(b, p);
-        this.slots.push({ side, i, b, p, slot: null });
+        const holder = new THREE.Group();
+        this.group.add(b, p, holder);
+        this.slots.push({ side, i, b, p, holder, slot: null, bslot: null, ver: -1 });
       }
     }
     this.stageId = null;
@@ -105,9 +107,23 @@ export class Scenery {
       const z = -(s.i * SLOT - off) - 6;
       const h0 = hash(slot * 2 + (s.side > 0 ? 1 : 0));
       const height = 6 + h0 * 14;
-      s.b.scale.set(6 + h0 * 3, height, 12);
-      s.b.position.set(s.side * (8.2 + h0 * 1.5), height / 2, z);
-      s.b.material = mat(`#${color.clone().offsetHSL(0, 0, h0 * 0.08 - 0.04).getHexString()}`);
+      const useKit = kit.has('city/');
+      s.b.visible = !useKit;
+      s.holder.visible = useKit;
+      if (useKit) {
+        if (s.bslot !== slot || s.ver !== kit.version) {
+          s.bslot = slot; s.ver = kit.version;
+          s.holder.clear();
+          const m = cloneFit(CITY[Math.floor(hash(slot * 3 + s.side) * CITY.length)], { width: 6 + h0 * 3 });
+          if (m) s.holder.add(m);
+        }
+        s.holder.rotation.y = s.side < 0 ? Math.PI / 2 : -Math.PI / 2;
+        s.holder.position.set(s.side * (9.5 + h0 * 1.5), 0, z);
+      } else {
+        s.b.scale.set(6 + h0 * 3, height, 12);
+        s.b.position.set(s.side * (8.2 + h0 * 1.5), height / 2, z);
+        s.b.material = mat(`#${color.clone().offsetHSL(0, 0, h0 * 0.08 - 0.04).getHexString()}`);
+      }
       const show = hash(slot * 7 + s.side) < 0.55;
       s.p.visible = show;
       if (show) {
