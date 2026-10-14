@@ -96,6 +96,5 @@ Promise.race([fontLoad, new Promise((r) => setTimeout(r, 1500))]).then(startLoop
 const qs = new URLSearchParams(location.search);
 if (qs.has('autostart')) {
   applyIntent(game, 'start');
-  if (qs.has('god')) game.powerups.shieldT = 1e9;
   for (let i = 0, n = Number(qs.get('skip')) * 60 || 0; i < n; i++) step(game, STEP);
 }
