@@ -13,7 +13,7 @@ export const STAGES = [
     hazards: {
       low: ['barricade', 'rubble'],
       high: ['banner'],
-      block: ['van', 'auto', 'auto'],
+      block: ['van', 'auto', 'auto', 'standee'],
       gas: ['tear gas'],
       bus: ['bus', 'metro'],
       ramp: ['ramp'],
@@ -40,7 +40,7 @@ export const STAGES = [
     hazards: {
       low: ['barricade', 'metro gate'],
       high: ['banner'],
-      block: ['van', 'water cannon', 'SIR form'],
+      block: ['van', 'water cannon', 'SIR form', 'standee'],
       gas: ['tear gas'],
       bus: ['bus', 'metro'],
       ramp: ['ramp'],

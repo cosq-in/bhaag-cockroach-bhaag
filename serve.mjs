@@ -34,8 +34,8 @@ function resolve(rawUrl) {
   if (v) return { file: path.join(ROOT, 'vendor', v[1]), type: TYPES.js };
   const a = /^\/assets\/models\/(car|city|hero|cop)\/((?:[a-z]+(?:-[a-z]+)*\.glb)|Textures\/colormap\.png)$/.exec(p);
   if (a) return { file: path.join(ROOT, 'assets', 'models', a[1], a[2]), type: a[2].endsWith('.png') ? TYPES.png : TYPES.glb };
-  const pz = /^\/assets\/posters\/(poster[0-9]+)\.webp$/.exec(p);
-  if (pz) return { file: path.join(ROOT, 'assets', 'posters', `${pz[1]}.webp`), type: TYPES.webp };
+  const pz = /^\/assets\/posters\/(manifest\.json|[a-z0-9_-]+\.(?:webp|png|jpg))$/.exec(p);
+  if (pz) return { file: path.join(ROOT, 'assets', 'posters', pz[1]), type: pz[1].endsWith('.json') ? TYPES.json : TYPES[pz[1].split('.').pop()] };
   const sx = /^\/assets\/sfx\/(manifest\.json|[a-z0-9_-]+\.(?:mp3|ogg|wav|m4a))$/.exec(p);
   if (sx) return { file: path.join(ROOT, 'assets', 'sfx', sx[1]), type: sx[1].endsWith('.json') ? TYPES.json : TYPES[sx[1].split('.').pop()] };
   return null;

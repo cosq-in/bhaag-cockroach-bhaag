@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mat, canvasTex, makeHero, makeInspector } from './models.js';
-import { WorldView, Scenery, laneX } from './world-view.js';
+import { WorldView, Scenery, RoadDressing, laneX } from './world-view.js';
 import { kit } from './kit.js';
 
 const fovFor = (aspect) => (aspect < 1 ? 78 : 62);
@@ -56,6 +56,7 @@ export class Stage3D {
 
     this.world = new WorldView(this.scene);
     this.scenery = new Scenery(this.scene);
+    this.dressing = new RoadDressing(this.scene);
     this.resize(1, 1);
   }
 
@@ -216,6 +217,7 @@ export class Stage3D {
 
     this.world.sync(g.spawner.items, g.t);
     this.scenery.update(g.distance, g.stage);
+    this.dressing.update(g.distance, g.t);
     if (this.roadTex) this.roadTex.offset.y = g.distance / 10;
 
     const k = Math.min(1, dt * 6);

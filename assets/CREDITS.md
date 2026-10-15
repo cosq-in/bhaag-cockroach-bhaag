@@ -12,6 +12,6 @@ Downloaded from opengameart.org mirrors of the official Kenney releases. Attribu
 
 The fallback inspector, buses, ramps and obstacles are original procedural models in src/models.js. The procedural cockroach in src/models.js is kept as a fallback if the hero model fails to load.
 
-- `posters/poster1-3.webp` - meme images supplied by the project owner (circulating web memes; rights belong to their original creators). Used as satirical in-world wall posters.
+- `posters/poster1-3.webp` - meme images supplied by the project owner (circulating web memes; rights belong to their original creators). Used as satirical in-world posters (banners, road decals, standee obstacles, building walls) via assets/posters/manifest.json.
 - `sfx/wah-modiji-wah.mp3` - short meme clip "Wah Modiji Wah" from myinstants.com (https://www.myinstants.com/media/sounds/wah-modiji-wah.mp3), chosen by the project owner. Uploader and licence are not stated on the source; provenance and authenticity unverified. Plays on chai pickup.
 - `sfx/modis-oh-my-god.mp3` - short meme clip "Modi's Oh my god" from myinstants.com (https://www.myinstants.com/media/sounds/modis-oh-my-god.mp3), chosen by the project owner. Uploader and licence are not stated on the source; provenance and authenticity unverified. Plays when you are detained.

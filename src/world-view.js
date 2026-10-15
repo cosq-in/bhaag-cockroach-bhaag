@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { mat, canvasTex, makeBus, makeRamp, makeObstacle, makePickup } from './models.js';
+import { mat, canvasTex, makeBus, makeRamp, makeObstacle, makePickup, refreshStandee } from './models.js';
 import { kit, CITY, cloneFit } from './kit.js';
+import { posters, pickPoster } from './posters.js';
 import { makeWall, makeTree, makeLamp, makeSign, makeTent, makeChai, makeSamrat, makeJaiPrakash, makeRamYantra } from './delhi.js';
 
 export const LANE_W = 2;
@@ -30,6 +31,7 @@ export class WorldView {
         const key = `${it.cat}:${it.kind}:${it.label}`;
         m = this.pool.get(key)?.pop() ?? build(it);
         m.userData.key = key;
+        if (it.label === 'standee') refreshStandee(m);
         this.live.set(it, m);
         this.scene.add(m);
       }
@@ -69,16 +71,6 @@ export class Scenery {
     this.slots = [];
     this.cards = new Map();
     this.protos = new Map();
-    this.posterMats = ['poster1', 'poster2', 'poster3'].map((n) => {
-      const m = new THREE.MeshBasicMaterial({ color: '#ffffff', side: THREE.DoubleSide });
-      m.userData.ready = false;
-      new THREE.TextureLoader().load(`assets/posters/${n}.webp`, (t) => {
-        t.colorSpace = THREE.SRGBColorSpace;
-        t.anisotropy = 4;
-        m.map = t; m.needsUpdate = true; m.userData.ready = true;
-      }, undefined, () => {});
-      return m;
-    });
     for (const side of [-1, 1]) {
       for (let i = 0; i < 9; i++) {
         const wall = makeWall(SLOT);
@@ -87,7 +79,7 @@ export class Scenery {
         p.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
         const prop = new THREE.Group();
         const bld = new THREE.Group();
-        const poster = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 3.4), this.posterMats[0]);
+        const poster = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat('#ffffff'));
         poster.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
         poster.visible = false;
         this.group.add(wall, b, p, prop, bld, poster);
@@ -158,12 +150,11 @@ export class Scenery {
           s.bld.updateMatrixWorld(true);
           const box = new THREE.Box3().setFromObject(s.bld);
           if (box.max.y > 7) {
-            const face = s.side < 0 ? box.max.x : box.min.x;
             s.posterOff = {
-              x: face - s.side * 0.06,
-              y: Math.min(box.max.y - 2.2, 4 + hash(slot * 19 + s.side) * 5),
+              x: (s.side < 0 ? box.max.x : box.min.x) - s.side * 0.06,
+              y: Math.min(box.max.y - 2.6, 4.5 + hash(slot * 19 + s.side) * 4),
               z: (box.min.z + box.max.z) / 2 + (hash(slot * 23 + s.side) - 0.5) * 2,
-              mat: Math.floor(hash(slot * 29 + s.side) * this.posterMats.length),
+              n: hash(slot * 29 + s.side),
             };
           }
         }
@@ -192,9 +183,11 @@ export class Scenery {
       s.bld.position.set(s.side * (inst ? 15 : 9.5 + h0 * 1.5), 0, z);
       s.bld.rotation.y = inst ? 0 : (s.side < 0 ? Math.PI / 2 : -Math.PI / 2);
       const po = s.posterOff;
-      s.poster.visible = !!po && this.posterMats[po.mat].userData.ready;
-      if (po) {
-        s.poster.material = this.posterMats[po.mat];
+      const pk = po ? pickPoster('building', po.n) : null;
+      s.poster.visible = !!pk;
+      if (pk) {
+        s.poster.material = pk.mat;
+        s.poster.scale.set(3.2, Math.min(4, 3.2 / pk.aspect), 1);
         s.poster.position.set(s.bld.position.x + po.x, po.y, s.bld.position.z + po.z);
       }
       s.b.visible = s.bldKind === 'none';
@@ -215,5 +208,84 @@ export class Scenery {
         }
       }
     }
+  }
+}
+
+// Banners hung between two poles across the road, and posters printed flat on the road surface.
+export class RoadDressing {
+  constructor(scene) {
+    this.group = new THREE.Group();
+    scene.add(this.group);
+    this.gantries = [];
+    this.decals = [];
+    for (let i = 0; i < 3; i++) {
+      const g = new THREE.Group();
+      for (const x of [-3.9, 3.9]) {
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 8, 8), mat('#3a3a40'));
+        pole.position.set(x, 4, 0);
+        g.add(pole);
+      }
+      const rope = new THREE.Mesh(new THREE.BoxGeometry(7.8, 0.08, 0.08), mat('#222222'));
+      rope.position.y = 7.6;
+      const cloth = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat('#c0392b', { side: THREE.DoubleSide }));
+      cloth.visible = false;
+      g.add(rope, cloth);
+      this.group.add(g);
+      this.gantries.push({ g, cloth, slot: null, has: false });
+      const decal = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat('#ffffff'));
+      decal.rotation.x = -Math.PI / 2;
+      decal.position.y = 0.03;
+      decal.visible = false;
+      this.group.add(decal);
+      this.decals.push({ m: decal, slot: null, has: false });
+    }
+  }
+
+  update(distance, t) {
+    const GS = 110;
+    const gbase = Math.floor(distance / GS);
+    const goff = distance % GS;
+    this.gantries.forEach((o, i) => {
+      const slot = gbase + i;
+      o.g.position.z = -(i * GS - goff) - 30;
+      o.g.visible = o.g.position.z < 5;
+      if (o.slot !== slot || (!o.has && posters.roles.banner.length)) {
+        o.slot = slot;
+        const pk = pickPoster('banner', hash(slot * 7 + 1));
+        o.has = !!pk;
+        o.cloth.visible = !!pk;
+        if (pk) {
+          const w = 4.4;
+          const h = Math.min(5, w / pk.aspect);
+          o.cloth.material = pk.mat;
+          o.cloth.scale.set(w, h, 1);
+          o.cloth.position.set(0, 7.55 - h / 2, 0);
+        }
+      }
+      o.cloth.rotation.z = Math.sin(t * 1.6 + i) * 0.03;
+    });
+    const DS = 55;
+    const dbase = Math.floor(distance / DS);
+    const doff = distance % DS;
+    this.decals.forEach((o, i) => {
+      const slot = dbase + i;
+      const z = -(i * DS - doff) - 14;
+      if (o.slot !== slot || (!o.has && posters.roles.road.length)) {
+        o.slot = slot;
+        const pk = pickPoster('road', hash(slot * 5 + 2));
+        o.has = !!pk;
+        o.m.visible = !!pk;
+        if (pk) {
+          const w = 2.4;
+          o.m.material = pk.mat;
+          o.m.scale.set(w, Math.min(3.2, w / pk.aspect), 1);
+          o.lane = Math.floor(hash(slot * 3 + 4) * 3);
+        }
+      }
+      if (o.has) {
+        o.m.position.set((o.lane - 1) * LANE_W, 0.03, z);
+        o.m.visible = z < 3;
+      }
+    });
   }
 }

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { cloneFit } from './kit.js';
 import { makeRickshaw } from './delhi.js';
+import { pickPoster } from './posters.js';
 
 const mats = new Map();
 export function mat(color, opts = {}) {
@@ -124,6 +125,7 @@ export function makeObstacle(it) {
   const g = new THREE.Group();
   const { kind, label } = it;
   if (label === 'auto') return makeRickshaw();
+  if (label === 'standee') return makeStandee();
   if (kind === 'block' && label !== 'SIR form') {
     const name = label === 'water cannon' ? 'car/firetruck' : Math.random() < 0.65 ? 'car/police' : 'car/van';
     const m = cloneFit(name, { width: 2.3 });
@@ -197,4 +199,30 @@ export function makePickup(kind) {
     g.add(scroll, band);
   }
   return g;
+}
+
+// A cut-out poster board standing in a lane. The poster is re-picked each time it is placed.
+export function makeStandee() {
+  const g = new THREE.Group();
+  g.add(box(1.7, 0.12, 0.8, mat('#4a4a52'), 0, 0.06, 0));
+  g.add(box(0.1, 0.9, 0.1, mat('#4a4a52'), -0.6, 0.5, 0.25), box(0.1, 0.9, 0.1, mat('#4a4a52'), 0.6, 0.5, 0.25));
+  const board = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat('#e8e8e8', { side: THREE.DoubleSide }));
+  g.add(board);
+  g.userData.board = board;
+  refreshStandee(g, 0);
+  return g;
+}
+
+export function refreshStandee(g, n = Math.random()) {
+  const board = g.userData.board;
+  const pk = pickPoster('standee', n);
+  if (pk) {
+    const h = 2.1;
+    board.material = pk.mat;
+    board.scale.set(Math.min(1.9, h * pk.aspect), h, 1);
+    board.position.y = 0.12 + h / 2;
+  } else {
+    board.scale.set(1.6, 2, 1);
+    board.position.y = 1.1;
+  }
 }

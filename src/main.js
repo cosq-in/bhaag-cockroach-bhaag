@@ -3,6 +3,7 @@ import { createRenderer, Stage3D } from './scene.js';
 import { drawHud } from './hud.js';
 import { attachInput } from './input.js';
 import { loadKit } from './kit.js';
+import { loadPosters } from './posters.js';
 import { initAudio, sfx, toggleMute, setPaused } from './audio.js';
 
 const HI_KEY = 'delhiRunner3dHi';
@@ -46,6 +47,7 @@ window.addEventListener('orientationchange', () => setTimeout(resize, 150));
 resize();
 
 loadKit();
+loadPosters();
 
 const qs0 = new URLSearchParams(location.search);
 if (qs0.has('resettut')) { try { localStorage.removeItem(TUT_KEY); } catch { /* ignore */ } }
