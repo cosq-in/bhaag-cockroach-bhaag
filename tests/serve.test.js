@@ -48,3 +48,16 @@ test('non-GET is rejected and binds to loopback', async () => {
     assert.equal(server.address().address, '127.0.0.1');
   });
 });
+
+test('posthog-config.js exposes only the three public config fields', async () => {
+  const server = createServer();
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const { port } = server.address();
+  const res = await fetch(`http://127.0.0.1:${port}/posthog-config.js`);
+  const body = await res.text();
+  server.close();
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get('content-type'), /javascript/);
+  const cfg = JSON.parse(body.replace(/^window\.POSTHOG_CONFIG = /, '').replace(/;$/, ''));
+  assert.deepEqual(Object.keys(cfg).sort().filter((k) => !['debug', 'host', 'projectToken'].includes(k)), []);
+});

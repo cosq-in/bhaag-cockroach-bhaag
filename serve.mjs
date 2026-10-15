@@ -46,6 +46,16 @@ export function createServer() {
     const headers = { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' };
     const fail = (code) => { res.writeHead(code, { ...headers, 'Content-Type': 'text/plain' }); res.end(code === 405 ? 'Method Not Allowed' : 'Not Found'); };
     if (req.method !== 'GET' && req.method !== 'HEAD') return fail(405);
+    if ((req.url ?? '').split('?')[0] === '/posthog-config.js') {
+      const config = JSON.stringify({
+        projectToken: process.env.POSTHOG_PROJECT_TOKEN,
+        host: process.env.POSTHOG_HOST,
+        debug: process.env.NODE_ENV !== 'production',
+      });
+      const data = `window.POSTHOG_CONFIG = ${config};`;
+      res.writeHead(200, { ...headers, 'Content-Type': TYPES.js, 'Content-Length': Buffer.byteLength(data) });
+      return res.end(req.method === 'HEAD' ? undefined : data);
+    }
     const hit = resolve(req.url ?? '/');
     if (!hit) return fail(404);
     fs.readFile(hit.file, (err, data) => {

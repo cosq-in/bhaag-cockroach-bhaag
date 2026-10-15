@@ -18,6 +18,9 @@ Swipe left/right to change lane, up to jump, down to slide, tap to use a banked 
 - `src/stages.js` - stages, hazards, slogans (the slogans are tone placeholders).
 - Dev flags: `?autostart`, `?skip=N`, `?over`, `?tut=chai`, `?resettut`.
 
+## Analytics (PostHog, optional)
+Anonymous play events (run started/ended, chai, witness, power-ups, WiFi revive) are sent to PostHog when `POSTHOG_PROJECT_TOKEN` and `POSTHOG_HOST` are set. Copy `.env.example` to `.env` and fill them in; `npm start` loads it (needs Node 22.9+). Without them nothing is sent. Autocapture, session replay and Do-Not-Track-ignoring are disabled. Only the public project token is used; never put a personal API key (`phx_...`) in this repo.
+
 ## Safety notes
 `serve.mjs` serves only the game files, so `.git`, docs and tests are never exposed. Do not replace it with a general static server when sharing publicly.
 

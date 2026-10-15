@@ -61,8 +61,27 @@ attachInput(worldCanvas, (intent) => {
 });
 
 const VIBRATE = { stumble: 40, caught: [60, 40, 120], revive: 30, power: 20 };
+const posthogReady = window.POSTHOG_READY ?? Promise.resolve(window.posthog);
 function buzz(name) {
   try { if (VIBRATE[name]) navigator.vibrate?.(VIBRATE[name]); } catch { /* unsupported */ }
+}
+function captureGameEvent(event, properties = {}) {
+  const payload = {
+    stage_id: game.stage.id,
+    score: Math.floor(game.score),
+    distance: Math.floor(game.distance),
+    ...properties,
+  };
+  posthogReady.then((posthog) => posthog?.capture(event, payload));
+}
+function logGameLifecycle(message, attributes = {}) {
+  const payload = {
+    stage_id: game.stage.id,
+    score: Math.floor(game.score),
+    distance: Math.floor(game.distance),
+    ...attributes,
+  };
+  posthogReady.then((posthog) => posthog?.logger?.info(message, payload));
 }
 let lastHit = -1;
 function lathiHits() {
@@ -74,7 +93,22 @@ function drainEvents() {
   for (const name of game.events) {
     sfx(name);
     buzz(name);
-    if (name === 'caught') saveHi(game.hi);
+    if (name === 'start') {
+      captureGameEvent('run_started');
+      logGameLifecycle('game run started', { event: 'run_started' });
+    }
+    if (name === 'chai') captureGameEvent('chai_collected');
+    if (name === 'witness') captureGameEvent('witness_token_collected');
+    if (name === 'power') captureGameEvent('power_up_used');
+    if (name === 'revive') {
+      captureGameEvent('wifi_revive_used');
+      logGameLifecycle('game run revived', { event: 'wifi_revive_used' });
+    }
+    if (name === 'caught') {
+      saveHi(game.hi);
+      captureGameEvent('run_ended', { outcome: 'detained', high_score: game.hi });
+      logGameLifecycle('game run ended', { event: 'run_ended', outcome: 'detained', high_score: game.hi });
+    }
     if (name === 'tutorial') { sfx('power'); saveSeen(game.tut.seen); }
   }
   game.events.length = 0;

@@ -12,6 +12,42 @@
   <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/jsm/"}}</script>
+  <script src="/posthog-config.js"></script>
+  <script>
+    const posthogConfig = window.POSTHOG_CONFIG;
+    window.POSTHOG_READY = Promise.resolve(null);
+    if (!posthogConfig.projectToken) {
+      if (posthogConfig.debug) throw new Error('POSTHOG_PROJECT_TOKEN variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once POSTHOG_PROJECT_TOKEN is configured');
+    } else if (!posthogConfig.host) {
+      if (posthogConfig.debug) throw new Error('POSTHOG_HOST variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once POSTHOG_HOST is configured');
+    } else {
+      window.POSTHOG_READY = new Promise((resolve) => {
+        const posthogScript = document.createElement('script');
+        posthogScript.async = true;
+        posthogScript.src = `${posthogConfig.host.replace('.i.posthog.com', '-assets.i.posthog.com')}/static/array.js`;
+        posthogScript.onload = () => {
+          window.posthog.init(posthogConfig.projectToken, {
+            api_host: posthogConfig.host,
+            autocapture: false,
+            disable_session_recording: true,
+            respect_dnt: true,
+            capture_exceptions: {
+              capture_unhandled_errors: true,
+              capture_unhandled_rejections: true,
+              capture_console_errors: false,
+            },
+            logs: {
+              serviceName: 'bhaag-cockroach-bhaag-web',
+              environment: posthogConfig.debug ? 'development' : 'production',
+            },
+          });
+          resolve(window.posthog);
+        };
+        posthogScript.onerror = () => resolve(null);
+        document.head.append(posthogScript);
+      });
+    }
+  </script>
 </head>
 <body>
   <canvas id="world"></canvas>
