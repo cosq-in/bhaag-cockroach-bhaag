@@ -160,3 +160,15 @@ test('already-seen tutorials are not shown, and banking a power-up explains it',
   step(g, STEP);
   assert.equal(g.tut.card?.key, 'power-shield');
 });
+
+test('detention clears obstacles around the player so the beating scene is visible', () => {
+  const g = started();
+  g.chaser.gap = 4;
+  const near = { ...ob('bus', 1, -0.5), len: 12 };
+  const far = { ...ob('block', 1, 60) };
+  g.spawner.items.push(near, far);
+  step(g, STEP);
+  assert.equal(g.state, 'over');
+  assert.ok(near.dead, 'the bus on top of the player is removed');
+  assert.ok(!far.dead, 'distant items are untouched');
+});

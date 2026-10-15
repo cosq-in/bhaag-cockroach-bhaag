@@ -76,6 +76,10 @@ function onStumble(g) {
       g.state = 'over';
       g.overT = 0;
       g.hi = Math.max(g.hi, Math.floor(g.score));
+      // The world freezes on game over: clear whatever overlaps the beating scene.
+      for (const it of g.spawner.items) {
+        if (it.z < 25 && it.z + (it.len ?? 0) > -8) it.dead = true;
+      }
       emit(g, 'caught');
     }
   }
