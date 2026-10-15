@@ -79,6 +79,59 @@ export class Stage3D {
     if (clip) this.heroMixer.clipAction(clip).play();
   }
 
+  // Dress the CC0 Kenney mini character as a khaki-clad constable with cap and lathi.
+  useKitCop() {
+    if (this.copRoot || !kit.cop) return;
+    const model = kit.cop.scene;
+    const khaki = '#b59a5b';
+    model.traverse((o) => {
+      if (o.name === 'body-mesh') o.material = new THREE.MeshLambertMaterial({ color: khaki });
+      if (o.name === 'head-mesh') { o.material = o.material.clone(); o.material.color.set('#e2aa7c'); }
+      if (o.name === 'head') {
+        const cap = new THREE.Group();
+        const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.235, 0.21, 0.12, 14), new THREE.MeshLambertMaterial({ color: khaki }));
+        crown.position.set(0, 0.42, 0.02);
+        const visor = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.02, 0.16), new THREE.MeshLambertMaterial({ color: '#3b2f1a' }));
+        visor.position.set(0, 0.37, 0.27);
+        cap.add(crown, visor);
+        o.add(cap);
+      }
+      if (o.name === 'arm-right') {
+        const holder = new THREE.Group();
+        holder.position.set(0, -0.17, 0.03);
+        holder.rotation.x = Math.PI / 2;
+        const lathi = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.045, 0.95, 8), new THREE.MeshLambertMaterial({ color: '#a8672a' }));
+        lathi.position.y = 0.32;
+        holder.add(lathi);
+        o.add(holder);
+      }
+    });
+    const box = new THREE.Box3().setFromObject(model);
+    const k = 2.2 / (box.max.y - box.min.y);
+    model.scale.setScalar(k);
+    this.copRoot = new THREE.Group();
+    this.copRoot.add(model);
+    this.scene.add(this.copRoot);
+    this.inspector.group.visible = false;
+    this.copMixer = new THREE.AnimationMixer(model);
+    const clip = (n) => kit.cop.animations.find((a) => a.name === n);
+    this.copActions = {};
+    for (const [key, name] of [['chase', 'sprint'], ['beat', 'attack-melee-right'], ['idle', 'idle']]) {
+      if (clip(name)) this.copActions[key] = this.copMixer.clipAction(clip(name));
+    }
+    this.copPos = new THREE.Vector3(0, 0, 8);
+    this.copState = null;
+  }
+
+  setCopAnim(state) {
+    if (this.copState === state || !this.copActions[state]) return;
+    const prev = this.copActions[this.copState];
+    const next = this.copActions[state];
+    next.reset().play();
+    if (prev) next.crossFadeFrom(prev, 0.15, false);
+    this.copState = state;
+  }
+
   makeGate() {
     const g = new THREE.Group();
     const stone = mat('#c9a77a');
@@ -121,8 +174,16 @@ export class Stage3D {
     hn.rotation.x = p.vy > 0.5 ? -0.25 : p.vy < -0.5 ? 0.2 : 0;
     hn.visible = !(p.graceT > 0 && Math.floor(g.t * 20) % 2);
     if (this.heroRoot) {
-      this.heroRoot.scale.y = p.sliding ? 0.6 : 1;
-      this.heroMixer.timeScale = g.state === 'play' && p.grounded ? 1 : 0.3;
+      if (g.state === 'over') {
+        const hit = Math.abs(Math.sin(g.overT * (Math.PI / 0.55)));
+        this.heroRoot.scale.set(1.15, 0.45 + 0.12 * hit, 1.15);
+        hn.rotation.z = 0.5 + Math.sin(g.overT * 38) * 0.08 * hit;
+        hn.position.y = 0;
+        this.heroMixer.timeScale = 0.05;
+      } else {
+        this.heroRoot.scale.set(1, p.sliding ? 0.6 : 1, 1);
+        this.heroMixer.timeScale = g.state === 'play' && p.grounded ? 1 : 0.3;
+      }
       this.heroMixer.update(dt);
     } else {
       this.hero.update(g.t, { sliding: p.sliding, airborne: p.airborne });
@@ -133,9 +194,25 @@ export class Stage3D {
     this.blob.scale.setScalar(Math.max(0.4, 1 - (p.y - p.support) * 0.25));
 
     const gap = g.chaser.gap;
-    this.inspector.group.visible = gap < 7.2 && g.state !== 'menu';
-    this.inspector.group.position.set(x, 0, gap * 1.05);
-    this.inspector.update(g.t);
+    this.useKitCop();
+    const over = g.state === 'over';
+    const cn = this.copRoot ?? this.inspector.group;
+    cn.visible = over || (gap < 7.2 && g.state !== 'menu');
+    const tx = over ? x + 1.35 : x;
+    const tz = over ? -0.1 : gap * 1.05;
+    if (this.copRoot) {
+      this.copPos.x += (tx - this.copPos.x) * Math.min(1, dt * 8);
+      this.copPos.z += (tz - this.copPos.z) * Math.min(1, dt * (over ? 7 : 12));
+      this.copRoot.position.set(this.copPos.x, 0, this.copPos.z);
+      this.copRoot.rotation.y = over ? -Math.PI / 2 : Math.PI;
+      this.setCopAnim(over ? 'beat' : g.state === 'menu' ? 'idle' : 'chase');
+      this.copMixer.timeScale = over ? 1.1 : 1 + (1 - gap / 8) * 0.4;
+      this.copMixer.update(dt);
+    } else {
+      cn.position.set(tx, 0, tz);
+      cn.rotation.y = over ? -Math.PI / 2 : 0;
+      this.inspector.update(g.t);
+    }
 
     this.world.sync(g.spawner.items, g.t);
     this.scenery.update(g.distance, g.stage);
@@ -145,8 +222,16 @@ export class Stage3D {
     this.camX += (x * 0.65 - this.camX) * k;
     this.camY += ((5.2 + p.y * 0.55) - this.camY) * k;
     const shake = g.shake > 0 ? g.shake * 0.35 : 0;
-    this.camera.position.set(this.camX + (Math.random() - 0.5) * shake, this.camY + (Math.random() - 0.5) * shake, 8);
-    this.camera.lookAt(x * 0.5, 1.4 + p.y * 0.45, -12);
+    if (g.state === 'over') {
+      this.overBlend = Math.min(1, (this.overBlend ?? 0) + dt * 1.6);
+      const b = this.overBlend;
+      this.camera.position.set(this.camX + (x + 0.7 - this.camX) * b, this.camY + (2.3 - this.camY) * b, 8 + (6.6 - 8) * b);
+      this.camera.lookAt(x * 0.5 + (x + 0.7 - x * 0.5) * b, 1.4 + (1.0 - 1.4) * b, -12 + 12 * b);
+    } else {
+      this.overBlend = 0;
+      this.camera.position.set(this.camX + (Math.random() - 0.5) * shake, this.camY + (Math.random() - 0.5) * shake, 8);
+      this.camera.lookAt(x * 0.5, 1.4 + p.y * 0.45, -12);
+    }
     const baseFov = fovFor(this.camera.aspect) + Math.min(10, Math.max(0, (g.speed - 30) / 4));
     if (Math.abs(this.camera.fov - baseFov) > 0.1) {
       this.camera.fov = baseFov;

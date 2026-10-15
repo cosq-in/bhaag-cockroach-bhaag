@@ -55,6 +55,12 @@ const VIBRATE = { stumble: 40, caught: [60, 40, 120], revive: 30, power: 20 };
 function buzz(name) {
   try { if (VIBRATE[name]) navigator.vibrate?.(VIBRATE[name]); } catch { /* unsupported */ }
 }
+let lastHit = -1;
+function lathiHits() {
+  if (game.state !== 'over') { lastHit = -1; return; }
+  const hit = Math.floor(game.overT / 0.55);
+  if (hit !== lastHit && game.overT < 3) { lastHit = hit; sfx('stumble'); buzz('stumble'); }
+}
 function drainEvents() {
   for (const name of game.events) {
     sfx(name);
@@ -80,6 +86,7 @@ function frame(now) {
   if (!document.hidden) acc += dt;
   while (acc >= STEP) { step(game, STEP); acc -= STEP; }
   drainEvents();
+  lathiHits();
   stage3d.render(game, dt);
   drawHud(hud, w, h, game);
   requestAnimationFrame(frame);
@@ -100,4 +107,5 @@ const qs = new URLSearchParams(location.search);
 if (qs.has('autostart')) {
   applyIntent(game, 'start');
   for (let i = 0, n = Number(qs.get('skip')) * 60 || 0; i < n; i++) step(game, STEP);
+  if (qs.has('over')) { game.state = 'over'; game.overT = Number(qs.get('over')) || 0; }
 }

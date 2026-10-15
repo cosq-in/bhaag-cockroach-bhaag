@@ -40,10 +40,10 @@ function bar(ctx, x, y, bw, bh, frac, color) {
   ctx.fillRect(x, y, bw * Math.max(0, Math.min(1, frac)), bh);
 }
 
-function overlay(ctx, w, h, u, lines) {
-  ctx.fillStyle = 'rgba(10,5,20,0.65)';
+function overlay(ctx, w, h, u, lines, { y0 = 0.28, dim = 0.65 } = {}) {
+  ctx.fillStyle = `rgba(10,5,20,${dim})`;
   ctx.fillRect(0, 0, w, h);
-  let y = h * 0.28;
+  let y = h * y0;
   for (const [s, size, color] of lines) y = block(ctx, s, w / 2, y, Math.max(14, size * u), color, w - 24) + size * u * 0.25;
 }
 
@@ -55,7 +55,7 @@ export function drawHud(ctx, w, h, g) {
 
   text(ctx, `Score ${Math.floor(g.score)}`, 14, 12, fs, '#fff', 'left');
   text(ctx, `Best ${Math.floor(g.hi)}`, w - 14, 12, fs, '#ffd27a', 'right');
-  text(ctx, `Stage ${g.stage.id}: ${g.stage.name}`, w / 2, 12 + fs * 1.3, Math.max(14, fs * 0.8), '#fff');
+  if (g.state !== 'over') text(ctx, `Stage ${g.stage.id}: ${g.stage.name}`, w / 2, 12 + fs * 1.3, Math.max(14, fs * 0.8), '#fff');
   if (g.mult > 1) text(ctx, `x${g.mult}`, 14, 12 + fs * 1.3, fs, '#7CFC9A', 'left');
 
   const bw = Math.min(150 * u, w * 0.38);
@@ -92,10 +92,20 @@ export function drawHud(ctx, w, h, g) {
       [g.touch ? 'Tap to start' : 'Tap or press Enter to start', 26, '#7CFC9A'],
     ]);
   } else if (g.state === 'over') {
-    overlay(ctx, w, h, u, [
-      ['DETAINED!', 50, '#ff6b6b'],
-      [`Score ${Math.floor(g.score)}   Best ${Math.floor(g.hi)}`, 26, '#fff'],
-      [g.touch ? 'Tap to run again' : 'Tap or press Enter to run again', 24, '#7CFC9A'],
-    ]);
+    const hit = Math.floor(g.overT / 0.55);
+    const phase = (g.overT % 0.55) / 0.55;
+    const words = ['WHACK!', 'THWACK!', 'OW!', 'DHAAP!', 'THOK!'];
+    if (g.overT < 3) {
+      ctx.globalAlpha = Math.max(0, 1 - phase * 1.2);
+      const sz = Math.max(30, 56 * u) * (1 + (1 - phase) * 0.25);
+      text(ctx, words[hit % words.length], w / 2, h * (0.34 - phase * 0.04 + (hit % 2) * 0.05), Math.min(sz, w * 0.16), '#ffd23f');
+      ctx.globalAlpha = 1;
+    }
+    ctx.fillStyle = 'rgba(10,5,20,0.28)';
+    ctx.fillRect(0, 0, w, h * 0.3);
+    let y = h * 0.05;
+    y = block(ctx, 'DETAINED!', w / 2, y, Math.max(34, 46 * u), '#ff6b6b', w - 24);
+    y = block(ctx, `Score ${Math.floor(g.score)}   Best ${Math.floor(g.hi)}`, w / 2, y, Math.max(18, 24 * u), '#fff', w - 24);
+    if (g.overT > 0.8) block(ctx, g.touch ? 'Tap to run again' : 'Tap or press Enter to run again', w / 2, h * 0.84, Math.max(18, 24 * u), '#7CFC9A', w - 24);
   }
 }

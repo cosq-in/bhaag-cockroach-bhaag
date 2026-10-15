@@ -27,7 +27,7 @@ function resolve(rawUrl) {
   if (m) return { file: path.join(ROOT, 'src', m[1]), type: TYPES.js };
   const v = /^\/vendor\/(three\.module\.js|jsm\/(?:loaders|utils)\/[A-Za-z]+\.js)$/.exec(p);
   if (v) return { file: path.join(ROOT, 'vendor', v[1]), type: TYPES.js };
-  const a = /^\/assets\/models\/(car|city|hero)\/((?:[a-z]+(?:-[a-z]+)*\.glb)|Textures\/colormap\.png)$/.exec(p);
+  const a = /^\/assets\/models\/(car|city|hero|cop)\/((?:[a-z]+(?:-[a-z]+)*\.glb)|Textures\/colormap\.png)$/.exec(p);
   if (a) return { file: path.join(ROOT, 'assets', 'models', a[1], a[2]), type: a[2].endsWith('.png') ? TYPES.png : TYPES.glb };
   return null;
 }
