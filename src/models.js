@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { cloneFit } from './kit.js';
+import { makeRickshaw } from './delhi.js';
 
 const mats = new Map();
 export function mat(color, opts = {}) {
@@ -122,6 +123,7 @@ export function makeRamp(len) {
 export function makeObstacle(it) {
   const g = new THREE.Group();
   const { kind, label } = it;
+  if (label === 'auto') return makeRickshaw();
   if (kind === 'block' && label !== 'SIR form') {
     const name = label === 'water cannon' ? 'car/firetruck' : Math.random() < 0.65 ? 'car/police' : 'car/van';
     const m = cloneFit(name, { width: 2.3 });

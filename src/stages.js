@@ -7,13 +7,13 @@ export const STAGES = [
     bossStart: 2000,
     bossLen: 400,
     palette: {
-      sky: ['#ff9a56', '#c0392b'], sun: '#ffd27a', building: '#4a2b45',
-      ground: '#3a2f3d', road: '#4b4150', edge: '#f4d35e',
+      sky: ['#f6c27a', '#d9823a'], sun: '#ffe2a8', building: '#b8714a',
+      ground: '#a8613a', road: '#4a4545', edge: '#f4d35e',
     },
     hazards: {
       low: ['barricade', 'rubble'],
       high: ['banner'],
-      block: ['van', 'bus'],
+      block: ['van', 'auto', 'auto'],
       gas: ['tear gas'],
       bus: ['bus', 'metro'],
       ramp: ['ramp'],

@@ -26,7 +26,7 @@ export class Stage3D {
     this.scene.add(this.hemi, this.sun);
 
     const laneTex = canvasTex(128, 128, (c, w, h) => {
-      c.fillStyle = '#4b4150'; c.fillRect(0, 0, w, h);
+      c.fillStyle = '#4a4545'; c.fillRect(0, 0, w, h);
       c.fillStyle = 'rgba(255,255,255,0.8)';
       for (const x of [w / 3, (2 * w) / 3]) c.fillRect(x - 2, 6, 4, h * 0.45);
       c.fillStyle = '#f4d35e'; c.fillRect(0, 0, 5, h); c.fillRect(w - 5, 0, 5, h);
@@ -34,7 +34,7 @@ export class Stage3D {
     if (laneTex) { laneTex.wrapS = laneTex.wrapT = THREE.RepeatWrapping; laneTex.repeat.set(1, 24); }
     this.roadTex = laneTex;
     this.road = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 240),
-      laneTex ? new THREE.MeshBasicMaterial({ map: laneTex }) : mat('#4b4150'));
+      laneTex ? new THREE.MeshBasicMaterial({ map: laneTex }) : mat('#4a4545'));
     this.road.rotation.x = -Math.PI / 2;
     this.road.position.set(0, 0, -100);
     this.ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 240), mat('#3a2f3d'));
