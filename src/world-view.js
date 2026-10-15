@@ -221,12 +221,12 @@ export class RoadDressing {
     for (let i = 0; i < 3; i++) {
       const g = new THREE.Group();
       for (const x of [-3.9, 3.9]) {
-        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.14, 8, 8), mat('#3a3a40'));
-        pole.position.set(x, 4, 0);
+        const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 17, 8), mat('#3a3a40'));
+        pole.position.set(x, 8.5, 0);
         g.add(pole);
       }
       const rope = new THREE.Mesh(new THREE.BoxGeometry(7.8, 0.08, 0.08), mat('#222222'));
-      rope.position.y = 7.6;
+      rope.position.y = 16.6;
       const cloth = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat('#c0392b', { side: THREE.DoubleSide }));
       cloth.visible = false;
       g.add(rope, cloth);
@@ -255,11 +255,11 @@ export class RoadDressing {
         o.has = !!pk;
         o.cloth.visible = !!pk;
         if (pk) {
-          const w = 4.4;
-          const h = Math.min(5, w / pk.aspect);
+          const w = 5.2;
+          const h = Math.min(5.2, w / pk.aspect);
           o.cloth.material = pk.mat;
           o.cloth.scale.set(w, h, 1);
-          o.cloth.position.set(0, 7.55 - h / 2, 0);
+          o.cloth.position.set(0, 16.55 - h / 2, 0);
         }
       }
       o.cloth.rotation.z = Math.sin(t * 1.6 + i) * 0.03;
