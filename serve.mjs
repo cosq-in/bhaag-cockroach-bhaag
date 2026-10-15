@@ -11,6 +11,10 @@ const TYPES = {
   glb: 'model/gltf-binary',
   png: 'image/png',
   webp: 'image/webp',
+  mp3: 'audio/mpeg',
+  ogg: 'audio/ogg',
+  wav: 'audio/wav',
+  m4a: 'audio/mp4',
   jpg: 'image/jpeg',
   json: 'application/json',
 };
@@ -32,6 +36,8 @@ function resolve(rawUrl) {
   if (a) return { file: path.join(ROOT, 'assets', 'models', a[1], a[2]), type: a[2].endsWith('.png') ? TYPES.png : TYPES.glb };
   const pz = /^\/assets\/posters\/(poster[0-9]+)\.webp$/.exec(p);
   if (pz) return { file: path.join(ROOT, 'assets', 'posters', `${pz[1]}.webp`), type: TYPES.webp };
+  const sx = /^\/assets\/sfx\/(manifest\.json|[a-z0-9_-]+\.(?:mp3|ogg|wav|m4a))$/.exec(p);
+  if (sx) return { file: path.join(ROOT, 'assets', 'sfx', sx[1]), type: sx[1].endsWith('.json') ? TYPES.json : TYPES[sx[1].split('.').pop()] };
   return null;
 }
 

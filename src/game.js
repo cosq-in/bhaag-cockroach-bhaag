@@ -55,6 +55,7 @@ export function startRun(g) {
   });
   g.tut.card = null;
   g.lastBanked = null;
+  emit(g, 'start');
   g.stage = locate(0).stage;
   popup(g, `Stage ${g.stage.id}: ${g.stage.name}`);
 }
@@ -123,7 +124,7 @@ function onPickup(g, it) {
   g.combo += 1;
   g.mult = 1 + Math.min(4, Math.floor(g.combo / 10));
   g.chaser.push(0.5);
-  if (it.kind === 'chai' || it.kind === 'witness') showTutorial(g, it.kind);
+  if (it.kind === 'chai' || it.kind === 'witness') { emit(g, it.kind); showTutorial(g, it.kind); }
   if (it.kind === 'petition') g.score += 10 * g.mult;
   if (it.kind === 'witness') {
     g.score += 25 * g.mult;
