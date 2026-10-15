@@ -1,4 +1,4 @@
-import { createGame, applyIntent, step } from './game.js';
+import { createGame, applyIntent, step, showTutorial } from './game.js';
 import { createRenderer, Stage3D } from './scene.js';
 import { drawHud } from './hud.js';
 import { attachInput } from './input.js';
@@ -6,9 +6,14 @@ import { loadKit } from './kit.js';
 import { initAudio, sfx, toggleMute, setPaused } from './audio.js';
 
 const HI_KEY = 'delhiRunner3dHi';
+const TUT_KEY = 'delhiRunner3dTutorial';
 const STEP = 1 / 60;
 
 function loadHi() { try { return Number(localStorage.getItem(HI_KEY)) || 0; } catch { return 0; } }
+function loadSeen() {
+  try { const v = JSON.parse(localStorage.getItem(TUT_KEY) ?? '[]'); return Array.isArray(v) ? v : []; } catch { return []; }
+}
+function saveSeen(set) { try { localStorage.setItem(TUT_KEY, JSON.stringify([...set])); } catch { /* storage unavailable */ } }
 function saveHi(v) { try { localStorage.setItem(HI_KEY, String(v)); } catch { /* storage unavailable */ } }
 
 const worldCanvas = document.getElementById('world');
@@ -42,7 +47,9 @@ resize();
 
 loadKit();
 
-const game = createGame(Math.random, loadHi());
+const qs0 = new URLSearchParams(location.search);
+if (qs0.has('resettut')) { try { localStorage.removeItem(TUT_KEY); } catch { /* ignore */ } }
+const game = createGame(Math.random, loadHi(), loadSeen());
 
 attachInput(worldCanvas, (intent) => {
   initAudio();
@@ -66,6 +73,7 @@ function drainEvents() {
     sfx(name);
     buzz(name);
     if (name === 'caught') saveHi(game.hi);
+    if (name === 'tutorial') { sfx('power'); saveSeen(game.tut.seen); }
   }
   game.events.length = 0;
 }
@@ -107,5 +115,6 @@ const qs = new URLSearchParams(location.search);
 if (qs.has('autostart')) {
   applyIntent(game, 'start');
   for (let i = 0, n = Number(qs.get('skip')) * 60 || 0; i < n; i++) step(game, STEP);
+  if (qs.has('tut')) showTutorial(game, qs.get('tut'), true);
   if (qs.has('over')) { game.state = 'over'; game.overT = Number(qs.get('over')) || 0; }
 }

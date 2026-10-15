@@ -127,3 +127,36 @@ test('roof pickups are collected from the roof; power intent works; stage change
   step(g, STEP);
   assert.equal(g.stage.id, 2);
 });
+
+test('first chai shows a slow-motion tutorial card once; it expires and is remembered', () => {
+  const g = started();
+  const chai = () => ({ cat: 'pickup', kind: 'chai', label: 'chai', lane: 1, z: 0, dead: false });
+  g.spawner.items.push(chai());
+  step(g, STEP);
+  assert.equal(g.tut.card?.key, 'chai');
+  assert.ok(g.events.includes('tutorial'));
+  const before = g.distance;
+  run(g, 1);
+  const slow = g.distance - before;
+  run(g, 2.5);
+  assert.equal(g.tut.card, null);
+  const t0 = g.distance;
+  run(g, 1);
+  assert.ok(g.distance - t0 > slow * 3, 'world speeds back up after the card');
+  g.spawner.items.push(chai());
+  step(g, STEP);
+  assert.equal(g.tut.card, null, 'chai card is only shown the first time');
+  assert.ok(g.tut.seen.has('chai'));
+});
+
+test('already-seen tutorials are not shown, and banking a power-up explains it', () => {
+  const g = createGame(mulberry32(7), 0, ['chai']);
+  startRun(g);
+  g.spawner.cooldown = 1e9;
+  g.spawner.items.push({ cat: 'pickup', kind: 'chai', label: 'chai', lane: 1, z: 0, dead: false });
+  step(g, STEP);
+  assert.equal(g.tut.card, null);
+  g.powerups.banked = 'shield';
+  step(g, STEP);
+  assert.equal(g.tut.card?.key, 'power-shield');
+});

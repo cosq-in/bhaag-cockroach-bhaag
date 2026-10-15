@@ -83,6 +83,29 @@ export function drawHud(ctx, w, h, g) {
     text(ctx, `BOSS: ${g.stage.boss}`, w / 2, h * 0.12, Math.max(18, fs * 1.3 * pulse), '#ff6b6b');
   }
 
+  const card = g.tut?.card;
+  if (card && g.state === 'play') {
+    ctx.fillStyle = 'rgba(10,5,20,0.45)';
+    ctx.fillRect(0, 0, w, h);
+    const pw = Math.min(w - 32, 440);
+    const px = (w - pw) / 2;
+    const titleSz = Math.max(24, 30 * u);
+    const lineSz = Math.max(15, 17 * u);
+    ctx.font = `${lineSz}px ${FONT}`;
+    const lines = card.lines.flatMap((l) => wrap(ctx, l, pw - 32));
+    const ph = titleSz * 1.7 + lines.length * lineSz * 1.35 + 44;
+    const py = h * 0.3;
+    ctx.fillStyle = 'rgba(30,18,50,0.94)';
+    ctx.fillRect(px, py, pw, ph);
+    ctx.strokeStyle = '#ffd27a';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(px, py, pw, ph);
+    text(ctx, card.title, w / 2, py + 14, titleSz, '#ffd27a');
+    let y = py + titleSz * 1.7;
+    for (const ln of lines) { text(ctx, ln, w / 2, y, lineSz, '#fff'); y += lineSz * 1.35; }
+    bar(ctx, px + 16, py + ph - 18, pw - 32, 6, card.t / card.total, '#ffd27a');
+  }
+
   if (g.state === 'menu') {
     overlay(ctx, w, h, u, [
       ['DELHI RUNNER 3D', 50, '#ffd27a'],
