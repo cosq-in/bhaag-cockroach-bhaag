@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mat, canvasTex, makeHero, makeInspector } from './models.js';
 import { WorldView, Scenery, laneX } from './world-view.js';
+import { kit } from './kit.js';
 
 const fovFor = (aspect) => (aspect < 1 ? 78 : 62);
 
@@ -58,6 +59,26 @@ export class Stage3D {
     this.resize(1, 1);
   }
 
+  // Swap the procedural cockroach for the rigged CC0-style model once it has loaded.
+  useKitHero() {
+    if (this.heroRoot || !kit.hero) return;
+    const model = kit.hero.scene;
+    const box = new THREE.Box3().setFromObject(model);
+    const size = box.getSize(new THREE.Vector3());
+    const k = 1.9 / size.y;
+    model.scale.setScalar(k);
+    const b2 = new THREE.Box3().setFromObject(model);
+    model.position.set(-(b2.min.x + b2.max.x) / 2, -b2.min.y, -(b2.min.z + b2.max.z) / 2);
+    model.rotation.y = Math.PI;
+    this.heroRoot = new THREE.Group();
+    this.heroRoot.add(model);
+    this.scene.add(this.heroRoot);
+    this.hero.group.visible = false;
+    this.heroMixer = new THREE.AnimationMixer(model);
+    const clip = kit.hero.animations.find((a) => a.name === 'run_loop') ?? kit.hero.animations[0];
+    if (clip) this.heroMixer.clipAction(clip).play();
+  }
+
   makeGate() {
     const g = new THREE.Group();
     const stone = mat('#c9a77a');
@@ -93,11 +114,19 @@ export class Stage3D {
     const p = g.player;
     const x = laneX(p.visualLane);
 
-    this.hero.group.position.set(x, p.y, 0);
-    this.hero.group.rotation.z = (p.visualLane - p.lane) * 0.35;
-    this.hero.group.rotation.x = p.vy > 0.5 ? -0.25 : p.vy < -0.5 ? 0.2 : 0;
-    this.hero.group.visible = !(p.graceT > 0 && Math.floor(g.t * 20) % 2);
-    this.hero.update(g.t, { sliding: p.sliding, airborne: p.airborne });
+    this.useKitHero();
+    const hn = this.heroRoot ?? this.hero.group;
+    hn.position.set(x, p.y, 0);
+    hn.rotation.z = (p.visualLane - p.lane) * 0.35;
+    hn.rotation.x = p.vy > 0.5 ? -0.25 : p.vy < -0.5 ? 0.2 : 0;
+    hn.visible = !(p.graceT > 0 && Math.floor(g.t * 20) % 2);
+    if (this.heroRoot) {
+      this.heroRoot.scale.y = p.sliding ? 0.6 : 1;
+      this.heroMixer.timeScale = g.state === 'play' && p.grounded ? 1 : 0.3;
+      this.heroMixer.update(dt);
+    } else {
+      this.hero.update(g.t, { sliding: p.sliding, airborne: p.airborne });
+    }
     this.shield.visible = g.powerups.shieldActive;
     this.shield.position.set(x, p.y + 0.6, 0);
     this.blob.position.set(x, p.support + 0.03, 0);

@@ -9,7 +9,7 @@ const FILES = {
 };
 
 const models = new Map();
-export const kit = { version: 0, has: (prefix) => [...models.keys()].some((k) => k.startsWith(prefix)) };
+export const kit = { version: 0, hero: null, has: (prefix) => [...models.keys()].some((k) => k.startsWith(prefix)) };
 export const CITY = FILES.city.map((n) => `city/${n}`);
 
 export async function loadKit() {
@@ -24,6 +24,9 @@ export async function loadKit() {
           .catch(() => {}));
       }
     }
+    jobs.push(loader.loadAsync('assets/models/hero/cockroach.glb')
+      .then((g) => { kit.hero = g; })
+      .catch(() => {}));
     await Promise.all(jobs);
   } catch { /* procedural fallbacks stay in place */ }
 }
