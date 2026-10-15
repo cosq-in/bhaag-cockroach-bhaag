@@ -108,7 +108,8 @@ export function drawHud(ctx, w, h, g) {
 
   if (g.state === 'menu') {
     overlay(ctx, w, h, u, [
-      ['DELHI RUNNER 3D', 50, '#ffd27a'],
+      ['BHAAG COCKROACH BHAAG', 44, '#ffd27a'],
+      ['Resign kar yaar.', 22, '#ff9f6b'],
       ['Cockroach Janta Party edition (fan satire)', 20, '#fff'],
       [g.touch ? 'Swipe left/right to change lane, up to jump, down to slide. Tap = power-up.' : 'Arrows / WASD to run. Space for power-ups.', 16, '#ddd'],
       ['Run up ramps onto buses. Dodge the inspector. Collect witnesses.', 16, '#ddd'],
