@@ -172,7 +172,7 @@ export class Stage3D {
     hn.position.set(x, p.y, 0);
     hn.rotation.z = (p.visualLane - p.lane) * 0.35;
     hn.rotation.x = p.vy > 0.5 ? -0.25 : p.vy < -0.5 ? 0.2 : 0;
-    hn.visible = !(p.graceT > 0 && Math.floor(g.t * 20) % 2);
+    hn.visible = g.state === 'over' || !(p.graceT > 0 && Math.floor(g.t * 20) % 2);
     if (this.heroRoot) {
       if (g.state === 'over') {
         const hit = Math.abs(Math.sin(g.overT * (Math.PI / 0.55)));
