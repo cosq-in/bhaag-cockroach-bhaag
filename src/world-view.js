@@ -69,6 +69,16 @@ export class Scenery {
     this.slots = [];
     this.cards = new Map();
     this.protos = new Map();
+    this.posterMats = ['poster1', 'poster2', 'poster3'].map((n) => {
+      const m = new THREE.MeshBasicMaterial({ color: '#ffffff', side: THREE.DoubleSide });
+      m.userData.ready = false;
+      new THREE.TextureLoader().load(`assets/posters/${n}.webp`, (t) => {
+        t.colorSpace = THREE.SRGBColorSpace;
+        t.anisotropy = 4;
+        m.map = t; m.needsUpdate = true; m.userData.ready = true;
+      }, undefined, () => {});
+      return m;
+    });
     for (const side of [-1, 1]) {
       for (let i = 0; i < 9; i++) {
         const wall = makeWall(SLOT);
@@ -77,8 +87,11 @@ export class Scenery {
         p.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
         const prop = new THREE.Group();
         const bld = new THREE.Group();
-        this.group.add(wall, b, p, prop, bld);
-        this.slots.push({ side, i, wall, b, p, prop, bld, slot: null, propSlot: null, bldSlot: null, ver: -1 });
+        const poster = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 3.4), this.posterMats[0]);
+        poster.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
+        poster.visible = false;
+        this.group.add(wall, b, p, prop, bld, poster);
+        this.slots.push({ side, i, wall, b, p, prop, bld, poster, posterOff: null, slot: null, propSlot: null, bldSlot: null, ver: -1 });
       }
     }
   }
@@ -125,6 +138,7 @@ export class Scenery {
   buildBuilding(s, slot, h0) {
     s.bld.clear();
     s.bldKind = 'none';
+    s.posterOff = null;
     if (hash(slot * 3 + s.side) < 0.3) {
       const k = Math.floor(hash(slot * 11 + s.side) * INSTRUMENTS.length);
       const make = INSTRUMENTS[k];
@@ -136,7 +150,24 @@ export class Scenery {
     }
     if (kit.has('city/')) {
       const m = cloneFit(CITY[Math.floor(hash(slot * 3 + s.side + 7) * CITY.length)], { width: 6 + h0 * 3 });
-      if (m) { s.bld.add(m); s.bldKind = 'kit'; }
+      if (m) {
+        s.bld.add(m); s.bldKind = 'kit';
+        if (hash(slot * 17 + s.side) < 0.45) {
+          s.bld.position.set(0, 0, 0);
+          s.bld.rotation.y = s.side < 0 ? Math.PI / 2 : -Math.PI / 2;
+          s.bld.updateMatrixWorld(true);
+          const box = new THREE.Box3().setFromObject(s.bld);
+          if (box.max.y > 7) {
+            const face = s.side < 0 ? box.max.x : box.min.x;
+            s.posterOff = {
+              x: face - s.side * 0.06,
+              y: Math.min(box.max.y - 2.2, 4 + hash(slot * 19 + s.side) * 5),
+              z: (box.min.z + box.max.z) / 2 + (hash(slot * 23 + s.side) - 0.5) * 2,
+              mat: Math.floor(hash(slot * 29 + s.side) * this.posterMats.length),
+            };
+          }
+        }
+      }
     }
   }
 
@@ -160,6 +191,12 @@ export class Scenery {
       const inst = s.bldKind === 'inst';
       s.bld.position.set(s.side * (inst ? 15 : 9.5 + h0 * 1.5), 0, z);
       s.bld.rotation.y = inst ? 0 : (s.side < 0 ? Math.PI / 2 : -Math.PI / 2);
+      const po = s.posterOff;
+      s.poster.visible = !!po && this.posterMats[po.mat].userData.ready;
+      if (po) {
+        s.poster.material = this.posterMats[po.mat];
+        s.poster.position.set(s.bld.position.x + po.x, po.y, s.bld.position.z + po.z);
+      }
       s.b.visible = s.bldKind === 'none';
       if (s.b.visible) {
         const height = 6 + h0 * 10;

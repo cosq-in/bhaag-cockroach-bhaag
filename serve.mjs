@@ -10,6 +10,7 @@ const TYPES = {
   js: 'text/javascript; charset=utf-8',
   glb: 'model/gltf-binary',
   png: 'image/png',
+  webp: 'image/webp',
   jpg: 'image/jpeg',
   json: 'application/json',
 };
@@ -29,6 +30,8 @@ function resolve(rawUrl) {
   if (v) return { file: path.join(ROOT, 'vendor', v[1]), type: TYPES.js };
   const a = /^\/assets\/models\/(car|city|hero|cop)\/((?:[a-z]+(?:-[a-z]+)*\.glb)|Textures\/colormap\.png)$/.exec(p);
   if (a) return { file: path.join(ROOT, 'assets', 'models', a[1], a[2]), type: a[2].endsWith('.png') ? TYPES.png : TYPES.glb };
+  const pz = /^\/assets\/posters\/(poster[0-9]+)\.webp$/.exec(p);
+  if (pz) return { file: path.join(ROOT, 'assets', 'posters', `${pz[1]}.webp`), type: TYPES.webp };
   return null;
 }
 

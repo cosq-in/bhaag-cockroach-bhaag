@@ -11,3 +11,5 @@ Downloaded from opengameart.org mirrors of the official Kenney releases. Attribu
 - `models/cop/cop.glb` - Kenney Mini Characters 1.0 (character-male-c), CC0. License: models/cop/License.txt. Recoloured khaki with a cap and lathi added in code (src/scene.js).
 
 The fallback inspector, buses, ramps and obstacles are original procedural models in src/models.js. The procedural cockroach in src/models.js is kept as a fallback if the hero model fails to load.
+
+- `posters/poster1-3.webp` - meme images supplied by the project owner (circulating web memes; rights belong to their original creators). Used as satirical in-world wall posters.
