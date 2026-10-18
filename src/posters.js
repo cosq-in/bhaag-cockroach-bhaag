@@ -1,3 +1,4 @@
+import { asset } from './asset.js';
 import * as THREE from 'three';
 import { canvasTex } from './models.js';
 import { loadUploadedPosters } from './poster-store.js';
@@ -72,13 +73,13 @@ export async function loadPosters() {
   if (await loadUploaded()) return;
   let listed = 0;
   try {
-    const manifest = await (await fetch('assets/posters/manifest.json')).json();
+    const manifest = await (await fetch(asset('assets/posters/manifest.json'))).json();
     const loader = new THREE.TextureLoader();
     for (const [role, files] of Object.entries(manifest)) {
       if (!roles[role]) continue;
       for (const f of files) {
         listed++;
-        loader.load(`assets/posters/${f}`, (t) => {
+        loader.load(asset(`assets/posters/${f}`), (t) => {
           t.colorSpace = THREE.SRGBColorSpace;
           t.anisotropy = 4;
           const aspect = t.image.width / t.image.height;

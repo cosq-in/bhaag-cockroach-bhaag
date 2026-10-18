@@ -64,6 +64,28 @@ posterFile.addEventListener('change', async () => {
   posterFile.value = '';
 });
 posterReset.addEventListener('click', async () => { await clearUploadedPosters(); location.reload(); });
+// Update handling: tell a stale copy apart from the live build, and offer a hard refresh.
+async function remoteBuild() {
+  try { return (await (await fetch('/version.json', { cache: 'no-store' })).json()).version; } catch { return null; }
+}
+async function hardRefresh() {
+  try { for (const k of await caches.keys()) await caches.delete(k); } catch { /* no Cache API */ }
+  try { for (const r of (await navigator.serviceWorker?.getRegistrations?.()) ?? []) await r.unregister(); } catch { /* none */ }
+  const u = new URL(location.href);
+  u.searchParams.set('r', String(Date.now()));
+  location.replace(u);
+}
+document.getElementById('refresh-game').addEventListener('click', hardRefresh);
+let checkedBuild = false;
+async function checkForUpdate() {
+  const mine = window.BUILD;
+  if (!mine || mine.startsWith('__') || game.state === 'play') return;
+  const live = await remoteBuild();
+  // Only auto-refresh once per page load so a host that keeps serving old files cannot cause a loop.
+  if (live && live !== mine && !checkedBuild && !new URL(location.href).searchParams.has('r')) { checkedBuild = true; hardRefresh(); }
+}
+setTimeout(checkForUpdate, 0);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForUpdate(); });
 let lastState = null;
 function syncPosterUi() {
   if (game.state === lastState) return;

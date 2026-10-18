@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { asset } from './asset.js';
 
 // Optional CC0 (Kenney) models. The game runs on procedural models until/unless these load.
 const FILES = {
@@ -19,22 +20,22 @@ export async function loadKit() {
     const jobs = [];
     for (const [dir, names] of Object.entries(FILES)) {
       for (const n of names) {
-        jobs.push(loader.loadAsync(`assets/models/${dir}/${n}.glb`)
+        jobs.push(loader.loadAsync(asset(`assets/models/${dir}/${n}.glb`))
           .then((g) => { models.set(`${dir}/${n}`, g.scene); kit.version++; })
           .catch(() => {}));
       }
     }
-    jobs.push(loader.loadAsync('assets/models/hero/cockroach.glb')
+    jobs.push(loader.loadAsync(asset('assets/models/hero/cockroach.glb'))
       .then((g) => { kit.hero = g; })
       .catch(() => {}));
-    jobs.push(loader.loadAsync('assets/models/cop/cop.glb').then((g) => { kit.cop = g; }).catch(() => {}));
+    jobs.push(loader.loadAsync(asset('assets/models/cop/cop.glb')).then((g) => { kit.cop = g; }).catch(() => {}));
     // One glTF instance per costumed hero (each is dressed in place, so they cannot share a scene graph).
     for (const id of ['spiderman', 'luffy']) {
-      jobs.push(loader.loadAsync('assets/models/cop/cop.glb').then((g) => { kit.mini[id] = g; }).catch(() => {}));
+      jobs.push(loader.loadAsync(asset('assets/models/cop/cop.glb')).then((g) => { kit.mini[id] = g; }).catch(() => {}));
     }
     // Optional dropped-in character models (assets/models/<id>/<id>.glb); the costumed rig is used if absent.
     for (const id of ['spiderman', 'luffy']) {
-      jobs.push(loader.loadAsync(`assets/models/${id}/${id}.glb`).then((g) => { kit.custom[id] = g; }).catch(() => {}));
+      jobs.push(loader.loadAsync(asset(`assets/models/${id}/${id}.glb`)).then((g) => { kit.custom[id] = g; }).catch(() => {}));
     }
     await Promise.all(jobs);
   } catch { /* procedural fallbacks stay in place */ }

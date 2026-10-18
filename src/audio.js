@@ -1,3 +1,4 @@
+import { asset } from './asset.js';
 let ctx = null;
 let muted = false;
 let step = 0;
@@ -7,12 +8,12 @@ const lastPlayed = new Map();
 // Optional custom clips: assets/sfx/manifest.json maps game events to audio files.
 async function loadSamples() {
   try {
-    const manifest = await (await fetch('assets/sfx/manifest.json')).json();
+    const manifest = await (await fetch(asset('assets/sfx/manifest.json'))).json();
     for (const [event, files] of Object.entries(manifest)) {
       const buffers = [];
       for (const f of files) {
         try {
-          const data = await (await fetch(`assets/sfx/${f}`)).arrayBuffer();
+          const data = await (await fetch(asset(`assets/sfx/${f}`))).arrayBuffer();
           buffers.push(await ctx.decodeAudioData(data));
         } catch { /* skip a bad or missing file */ }
       }

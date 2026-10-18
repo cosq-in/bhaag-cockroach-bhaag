@@ -61,3 +61,32 @@ test('posthog-config.js exposes only the three public config fields', async () =
   const cfg = JSON.parse(body.replace(/^window\.POSTHOG_CONFIG = /, '').replace(/;$/, ''));
   assert.deepEqual(Object.keys(cfg).sort().filter((k) => !['debug', 'host', 'projectToken'].includes(k)), []);
 });
+
+test('index.html is stamped with the build id and module URLs are versioned', async () => {
+  const { BUILD } = await import('../serve.mjs');
+  await withServer(async (server, base) => {
+    const html = await (await fetch(base + '/')).text();
+    assert.ok(html.includes(`src/main.js?v=${BUILD}`));
+    assert.ok(html.includes(`"./src/game.js":"./src/game.js?v=${BUILD}"`));
+    assert.ok(!html.includes('__BUILD__'));
+    const v = await (await fetch(base + '/version.json')).json();
+    assert.equal(v.version, BUILD);
+  });
+});
+
+test('versioned URLs are cached forever, everything else stays no-store', async () => {
+  const { BUILD } = await import('../serve.mjs');
+  await withServer(async (server, base) => {
+    const hit = await fetch(`${base}/src/main.js?v=${BUILD}`);
+    assert.equal(hit.headers.get('cache-control'), 'public, max-age=31536000, immutable');
+    await hit.arrayBuffer();
+    const stale = await fetch(`${base}/src/main.js?v=old`);
+    assert.equal(stale.headers.get('cache-control'), 'no-store');
+    await stale.arrayBuffer();
+    const html = await fetch(`${base}/?v=${BUILD}`);
+    assert.equal(html.headers.get('cache-control'), 'no-store');
+    await html.arrayBuffer();
+    const ver = await fetch(base + '/version.json');
+    assert.equal(ver.headers.get('cache-control'), 'no-store');
+  });
+});

@@ -1,6 +1,7 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -18,6 +19,34 @@ const TYPES = {
   jpg: 'image/jpeg',
   json: 'application/json',
 };
+
+// Build id: a deploy's commit if the host provides one, else a hash of the game files (computed at startup).
+function computeBuild() {
+  const env = process.env.BUILD_ID ?? process.env.RENDER_GIT_COMMIT ?? process.env.VERCEL_GIT_COMMIT_SHA
+    ?? process.env.RAILWAY_GIT_COMMIT_SHA ?? process.env.SOURCE_VERSION;
+  if (env) return env.slice(0, 12);
+  const h = crypto.createHash('sha1');
+  const add = (f) => { try { h.update(fs.readFileSync(path.join(ROOT, f))); } catch { /* optional file */ } };
+  add('index.html'); add('style.css');
+  for (const f of fs.readdirSync(path.join(ROOT, 'src')).sort()) add(`src/${f}`);
+  add('assets/posters/manifest.json'); add('assets/sfx/manifest.json');
+  const walk = (d) => { for (const e of fs.readdirSync(path.join(ROOT, d), { withFileTypes: true })) {
+    if (e.isDirectory()) walk(`${d}/${e.name}`); else h.update(`${d}/${e.name}:${fs.statSync(path.join(ROOT, d, e.name)).size}`); } };
+  try { walk('assets'); } catch { /* none */ }
+  return h.digest('hex').slice(0, 12);
+}
+export const BUILD = computeBuild();
+
+// index.html with the build id stamped in and every module URL versioned through the import map.
+function renderIndex(html) {
+  const imports = { three: `./vendor/three.module.js?v=${BUILD}`, 'three/addons/': './vendor/jsm/' };
+  for (const f of fs.readdirSync(path.join(ROOT, 'src'))) {
+    if (/^[a-z]+(?:-[a-z]+)*\.js$/.test(f)) imports[`./src/${f}`] = `./src/${f}?v=${BUILD}`;
+  }
+  return html
+    .replace(/<script type="importmap">[\s\S]*?<\/script>/, `<script type="importmap">${JSON.stringify({ imports })}</script>`)
+    .replaceAll('__BUILD__', BUILD);
+}
 
 // Maps a request path to a file on the allowlist, or null.
 function resolve(rawUrl) {
@@ -56,11 +85,21 @@ export function createServer() {
       res.writeHead(200, { ...headers, 'Content-Type': TYPES.js, 'Content-Length': Buffer.byteLength(data) });
       return res.end(req.method === 'HEAD' ? undefined : data);
     }
+    if ((req.url ?? '').split('?')[0] === '/version.json') {
+      const data = JSON.stringify({ version: BUILD });
+      res.writeHead(200, { ...headers, 'Content-Type': TYPES.json, 'Content-Length': data.length });
+      return res.end(req.method === 'HEAD' ? undefined : data);
+    }
     const hit = resolve(req.url ?? '/');
     if (!hit) return fail(404);
-    fs.readFile(hit.file, (err, data) => {
+    // A URL carrying this deploy's build id can never go stale, so it may be cached for good.
+    const query = new URLSearchParams((req.url ?? '').split('?')[1] ?? '');
+    const versioned = query.get('v') === BUILD && hit.type !== TYPES.html;
+    fs.readFile(hit.file, (err, raw) => {
       if (err) return fail(404);
-      res.writeHead(200, { ...headers, 'Content-Type': hit.type, 'Content-Length': data.length });
+      const data = hit.type === TYPES.html ? Buffer.from(renderIndex(raw.toString('utf8'))) : raw;
+      const cache = versioned ? { 'Cache-Control': 'public, max-age=31536000, immutable' } : {};
+      res.writeHead(200, { ...headers, ...cache, 'Content-Type': hit.type, 'Content-Length': data.length });
       res.end(req.method === 'HEAD' ? undefined : data);
     });
   });

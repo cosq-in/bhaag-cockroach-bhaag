@@ -9,7 +9,8 @@ canvas { position: fixed; left: 0; top: 0; display: block; width: 100vw; height:
 #msg { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; text-align: center; color: #fff; font: 18px sans-serif; }
 #msg[hidden] { display: none; }
 
-#poster-ui { position: fixed; right: 10px; top: 52px; z-index: 5; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; max-width: 46vw; text-align: right; }
+#poster-ui { position: fixed; left: 50%; top: 52%; transform: translateX(-50%); z-index: 5; display: flex; flex-flow: row wrap; justify-content: center; align-items: center; gap: 8px; width: min(92vw, 420px); text-align: center; }
+#poster-ui small { flex-basis: 100%; }
 #poster-ui[hidden] { display: none; }
 #poster-ui .pill { font: 600 13px/1 sans-serif; color: #fff; background: rgba(20,12,35,0.85); border: 2px solid #ffd27a; border-radius: 999px; padding: 8px 12px; cursor: pointer; }
 #poster-ui .pill[hidden] { display: none; }

@@ -10,8 +10,9 @@
   <title>Bhaag Cockroach Bhaag</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=__BUILD__">
   <script type="importmap">{"imports":{"three":"./vendor/three.module.js","three/addons/":"./vendor/jsm/"}}</script>
+  <script>window.BUILD = '__BUILD__';</script>
   <script src="/posthog-config.js"></script>
   <script>
     const posthogConfig = window.POSTHOG_CONFIG;
@@ -56,9 +57,10 @@
   <div id="poster-ui" hidden>
     <label class="pill" for="poster-file">Add your posters</label>
     <input id="poster-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
+    <button id="refresh-game" class="pill" type="button">Refresh game</button>
     <button id="poster-reset" class="pill" type="button" hidden>Reset posters</button>
     <small>Images stay on your device and are never uploaded.</small>
   </div>
-  <script type="module" src="src/main.js"></script>
+  <script type="module" src="src/main.js?v=__BUILD__"></script>
 </body>
 </html>
