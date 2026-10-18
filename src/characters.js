@@ -87,6 +87,23 @@ export function setHeroMode(hero, mode) {
   if (prev && prev !== next) next.crossFadeFrom(prev, 0.2, false);
 }
 
+// Skinned meshes report bind-pose geometry bounds that can disagree with the rig, so size from the bones:
+// scale so the skeleton (plus ~10% for head/hat) is `height` tall and stand it on y = 0, centred on x/z.
+export function fitToBones(model, height) {
+  const v = new THREE.Vector3();
+  const bones = () => {
+    model.updateMatrixWorld(true);
+    const bb = new THREE.Box3();
+    model.traverse((o) => { if (o.isBone) bb.expandByPoint(o.getWorldPosition(v)); });
+    if (bb.isEmpty()) bb.setFromObject(model);
+    return bb;
+  };
+  const first = bones();
+  model.scale.setScalar(height / ((first.max.y - first.min.y) * 1.1));
+  const b = bones();
+  model.position.set(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2);
+}
+
 // Per-character settings for dropped-in GLBs.
 //   yaw: extra turn (radians) for models that face another way; hide: node names to hide (outfit/face variants);
 //   run / dance: animation-name patterns.
@@ -100,19 +117,7 @@ export function buildFileHero(id, gltf) {
   const cfg = FILE_CFG[id] ?? {};
   const model = gltf.scene;
   if (cfg.hide) model.traverse((o) => { if (cfg.hide.test(o.name)) o.visible = false; });
-  // Skinned meshes report bind-pose geometry bounds that can disagree with the rig, so size from the bones.
-  const v = new THREE.Vector3();
-  const bones = () => {
-    model.updateMatrixWorld(true);
-    const bb = new THREE.Box3();
-    model.traverse((o) => { if (o.isBone) bb.expandByPoint(o.getWorldPosition(v)); });
-    if (bb.isEmpty()) bb.setFromObject(model);
-    return bb;
-  };
-  const first = bones();
-  model.scale.setScalar(1.8 / ((first.max.y - first.min.y) * 1.1));
-  const b = bones();
-  model.position.set(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2);
+  fitToBones(model, 1.8);
   model.rotation.y = Math.PI + (cfg.yaw ?? 0);
   const root = new THREE.Group();
   root.add(model);

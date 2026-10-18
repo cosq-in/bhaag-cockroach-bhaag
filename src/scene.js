@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { mat, canvasTex, makeHero, makeInspector } from './models.js';
 import { WorldView, Scenery, RoadDressing, laneX } from './world-view.js';
 import { kit } from './kit.js';
-import { buildFileHero, buildMiniHero, makeActions, setHeroMode } from './characters.js';
+import { buildFileHero, fitToBones, buildMiniHero, makeActions, setHeroMode } from './characters.js';
 
 const fovFor = (aspect) => (aspect < 1 ? 78 : 62);
 
@@ -83,12 +83,7 @@ export class Stage3D {
   buildKitHero() {
     if (!kit.hero) return null;
     const model = kit.hero.scene;
-    const box = new THREE.Box3().setFromObject(model);
-    const size = box.getSize(new THREE.Vector3());
-    const k = 1.9 / size.y;
-    model.scale.setScalar(k);
-    const b2 = new THREE.Box3().setFromObject(model);
-    model.position.set(-(b2.min.x + b2.max.x) / 2, -b2.min.y, -(b2.min.z + b2.max.z) / 2);
+    fitToBones(model, 1.9);
     model.rotation.y = Math.PI;
     const root = new THREE.Group();
     root.add(model);
@@ -217,7 +212,7 @@ export class Stage3D {
       // Start-screen showpiece: hop and sway (facing the camera) on top of the dance clip.
       hn.position.set((this.menuSlide ?? 0) * -2.6, Math.abs(Math.sin(this.clock * 5)) * 0.18, 0);
       hn.rotation.set(0, Math.PI + Math.sin(this.clock * 1.6) * 0.8, Math.sin(this.clock * 5) * 0.08);
-      hn.scale.set(1.2, 1.2, 1.2);
+      hn.scale.setScalar(this.charId === 'cockroach' ? 0.95 : 1.2);
       hn.visible = true;
       if (this.heroMixer) this.heroMixer.timeScale = 1;
     } else {
