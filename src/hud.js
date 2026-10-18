@@ -141,7 +141,7 @@ export function drawHud(ctx, w, h, g, dial) {
       [g.touch ? 'Swipe to dodge, tap = power-up' : 'Arrows / WASD to run, Space = power-up', 15, '#ddd'],
     ], { y0: 0.04, dim: 0.35 });
     if (dial) drawDial(ctx, w, h, u, dial);
-    text(ctx, g.touch ? 'Tap the screen to start' : 'Tap or press Enter to start', w / 2, h * 0.25, Math.max(18, 24 * u), '#7CFC9A');
+    text(ctx, g.touch ? 'Tap the screen to start' : 'Tap or press Enter to start', w / 2, h * 0.19, Math.max(16, 22 * u), '#7CFC9A');
   } else if (g.state === 'over') {
     const hit = Math.floor(g.overT / 0.55);
     const phase = (g.overT % 0.55) / 0.55;

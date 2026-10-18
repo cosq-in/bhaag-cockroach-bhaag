@@ -65,7 +65,24 @@ export function buildMiniHero(id, gltf) {
   const root = new THREE.Group();
   root.add(model);
   const mixer = new THREE.AnimationMixer(model);
-  const clip = gltf.animations.find((a) => a.name === 'sprint') ?? gltf.animations[0];
-  if (clip) mixer.clipAction(clip).play();
-  return { root, mixer };
+  const find = (n) => gltf.animations.find((a) => a.name === n);
+  return { root, mixer, actions: makeActions(mixer, find('sprint') ?? gltf.animations[0], find('emote-yes') ?? find('idle')) };
+}
+
+// Run and start-screen dance actions; setHeroMode() cross-fades between them.
+export function makeActions(mixer, runClip, danceClip) {
+  const run = runClip ? mixer.clipAction(runClip) : null;
+  const dance = danceClip ? mixer.clipAction(danceClip) : null;
+  return { run, dance, mode: null };
+}
+
+export function setHeroMode(hero, mode) {
+  const a = hero.actions;
+  if (!a || a.mode === mode) return;
+  const next = (mode === 'dance' ? a.dance : a.run) ?? a.run ?? a.dance;
+  const prev = a.mode === 'dance' ? a.dance : a.run;
+  a.mode = mode;
+  if (!next) return;
+  next.reset().play();
+  if (prev && prev !== next) next.crossFadeFrom(prev, 0.2, false);
 }

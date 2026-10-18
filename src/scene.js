@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { mat, canvasTex, makeHero, makeInspector } from './models.js';
 import { WorldView, Scenery, RoadDressing, laneX } from './world-view.js';
 import { kit } from './kit.js';
-import { buildMiniHero } from './characters.js';
+import { buildMiniHero, makeActions, setHeroMode } from './characters.js';
 
 const fovFor = (aspect) => (aspect < 1 ? 78 : 62);
 
@@ -90,9 +90,8 @@ export class Stage3D {
     const root = new THREE.Group();
     root.add(model);
     const mixer = new THREE.AnimationMixer(model);
-    const clip = kit.hero.animations.find((a) => a.name === 'run_loop') ?? kit.hero.animations[0];
-    if (clip) mixer.clipAction(clip).play();
-    return { root, mixer };
+    const find = (n) => kit.hero.animations.find((a) => a.name === n);
+    return { root, mixer, actions: makeActions(mixer, find('run_loop') ?? kit.hero.animations[0], find('idle_loop')) };
   }
 
   // Dress the CC0 Kenney mini character as a khaki-clad constable with cap and lathi.
@@ -188,6 +187,9 @@ export class Stage3D {
     this.heroRoot = active?.root;
     this.heroMixer = active?.mixer;
     this.hero.group.visible = !active;
+    this.clock = (this.clock ?? 0) + dt;
+    const menu = g.state === 'menu';
+    if (active) setHeroMode(active, menu ? 'dance' : 'run');
     const hn = this.heroRoot ?? this.hero.group;
     hn.position.set(x, p.y, 0);
     hn.rotation.z = (p.visualLane - p.lane) * 0.35;
@@ -207,6 +209,17 @@ export class Stage3D {
       this.heroMixer.update(dt);
     } else {
       this.hero.update(g.t, { sliding: p.sliding, airborne: p.airborne });
+    }
+    if (menu) {
+      // Start-screen showpiece: hop and sway (facing the camera) on top of the dance clip.
+      hn.position.set(0, Math.abs(Math.sin(this.clock * 5)) * 0.18, 0);
+      hn.rotation.set(0, Math.PI + Math.sin(this.clock * 1.6) * 0.8, Math.sin(this.clock * 5) * 0.08);
+      hn.scale.set(1.35, 1.35, 1.35);
+      hn.visible = true;
+      if (this.heroMixer) this.heroMixer.timeScale = 1;
+    } else {
+      hn.rotation.y = 0;
+      if (!this.heroRoot) hn.scale.set(1, 1, 1);
     }
     this.shield.visible = g.powerups.shieldActive;
     this.shield.position.set(x, p.y + 0.6, 0);
@@ -250,8 +263,16 @@ export class Stage3D {
       this.camera.lookAt(x * 0.5 + (x + 0.7 - x * 0.5) * b, 1.4 + (1.0 - 1.4) * b, -12 + 12 * b);
     } else {
       this.overBlend = 0;
-      this.camera.position.set(this.camX + (Math.random() - 0.5) * shake, this.camY + (Math.random() - 0.5) * shake, 8);
-      this.camera.lookAt(x * 0.5, 1.4 + p.y * 0.45, -12);
+      this.menuBlend = Math.max(0, Math.min(1, (this.menuBlend ?? 1) + (menu ? dt : -dt) * 2.5));
+      const mb = this.menuBlend;
+      const px = this.camX + (Math.random() - 0.5) * shake;
+      const py = this.camY + (Math.random() - 0.5) * shake;
+      // Menu: close front-on shot of the hero, framed in the upper half so the dial sits below.
+      const half = (fovFor(this.camera.aspect) * Math.PI) / 360;
+      const axis = Math.atan((1.4 - 1.1) / 5.6) + Math.atan(0.2 * Math.tan(half));
+      const mlookY = 1.4 - 5.6 * Math.tan(axis);
+      this.camera.position.set(px * (1 - mb), py + (1.4 - py) * mb, 8 + (5.6 - 8) * mb);
+      this.camera.lookAt(x * 0.5 * (1 - mb), 1.4 + p.y * 0.45 + (mlookY - 1.4 - p.y * 0.45) * mb, -12 * (1 - mb));
     }
     const baseFov = fovFor(this.camera.aspect) + Math.min(10, Math.max(0, (g.speed - 30) / 4));
     if (Math.abs(this.camera.fov - baseFov) > 0.1) {
