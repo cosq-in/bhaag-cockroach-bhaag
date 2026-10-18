@@ -14,4 +14,6 @@ The fallback inspector, buses, ramps and obstacles are original procedural model
 
 - Posters: no third-party images. When `assets/posters/manifest.json` is empty the game draws original cartoon stand-ins in code (src/posters.js); add your own sketches there to override them.
 - Sound: no third-party clips. All effects are synthesized with WebAudio (src/audio.js). `sfx/manifest.json` can still point events at your own files.
-- Spider-Hero and Straw Hat Kid are the Kenney Mini Characters rig (CC0) costumed in code (src/characters.js); they are original parody costumes, not licensed character models.
+- `models/spiderman/spiderman.glb` - "Low Poly Spider-Man (Rigged)" by jaywalker (https://sketchfab.com/3d-models/low-poly-spider-man-rigged-758a098dddeb4eb3abbc5815f9984772), CC BY 4.0. Character rights belong to their owners; this is fan satire.
+- `models/luffy/luffy.glb` - "one piece bounty rush luffy (2ysl)" by Primalfrom12 (https://sketchfab.com/3d-models/one-piece-bounty-rush-luffy-2ysl-df3410599cc24d5b91e44c86413fc858), CC BY 4.0. Character rights belong to their owners; this is fan satire.
+- If those two files are absent, the game falls back to the Kenney Mini Characters rig (CC0) costumed in code (src/characters.js).

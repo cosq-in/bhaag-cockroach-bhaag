@@ -87,20 +87,38 @@ export function setHeroMode(hero, mode) {
   if (prev && prev !== next) next.crossFadeFrom(prev, 0.2, false);
 }
 
+// Per-character settings for dropped-in GLBs.
+//   yaw: extra turn (radians) for models that face another way; hide: node names to hide (outfit/face variants);
+//   run / dance: animation-name patterns.
+const FILE_CFG = {
+  luffy: { yaw: 0, hide: /face_(attack|damage)|ele_arm|sp_fore_arm|hand_open|shirts_ura/, run: /_run$/, dance: /_victory_lp$|_opening$|_idle_a$/ },
+  spiderman: { yaw: 0 },
+};
+
 // Any dropped-in character GLB: fitted to hero height, turned to run away from the camera.
-// `yaw` fixes models that face a different way (radians); animations are used if the file has them.
-export function buildFileHero(gltf, yaw = 0) {
+export function buildFileHero(id, gltf) {
+  const cfg = FILE_CFG[id] ?? {};
   const model = gltf.scene;
-  const size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
-  model.scale.setScalar(1.8 / size.y);
-  const b = new THREE.Box3().setFromObject(model);
+  if (cfg.hide) model.traverse((o) => { if (cfg.hide.test(o.name)) o.visible = false; });
+  // Skinned meshes report bind-pose geometry bounds that can disagree with the rig, so size from the bones.
+  const v = new THREE.Vector3();
+  const bones = () => {
+    model.updateMatrixWorld(true);
+    const bb = new THREE.Box3();
+    model.traverse((o) => { if (o.isBone) bb.expandByPoint(o.getWorldPosition(v)); });
+    if (bb.isEmpty()) bb.setFromObject(model);
+    return bb;
+  };
+  const first = bones();
+  model.scale.setScalar(1.8 / ((first.max.y - first.min.y) * 1.1));
+  const b = bones();
   model.position.set(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2);
-  model.rotation.y = Math.PI + yaw;
+  model.rotation.y = Math.PI + (cfg.yaw ?? 0);
   const root = new THREE.Group();
   root.add(model);
   const mixer = new THREE.AnimationMixer(model);
-  const find = (re) => gltf.animations.find((a) => re.test(a.name));
-  const run = find(/run|sprint|walk/i) ?? gltf.animations[0];
-  const dance = find(/dance|emote|idle|wave/i) ?? run;
+  const find = (re) => re && gltf.animations.find((a) => re.test(a.name));
+  const run = find(cfg.run) ?? find(/run|sprint|walk/i) ?? gltf.animations[0];
+  const dance = find(cfg.dance) ?? find(/dance|emote|idle|wave/i) ?? run;
   return { root, mixer, kind: 'file', actions: makeActions(mixer, run, dance) };
 }

@@ -13,7 +13,7 @@ Open it on a phone through a tunnel (for example `ngrok http 127.0.0.1:8000`).
 Swipe left/right to change lane, up to jump, down to slide, tap to use a banked power-up. Keyboard: arrows or WASD, Space, M to mute.
 
 ## Characters
-Pick on the start screen with the rotary dial (swipe, arrow keys, or tap a hole): Cockroach, Spider-Hero, Straw Hat Kid. The choice is remembered.
+Pick on the start screen with the swipe carousel (swipe, arrow keys, or tap a card): Cockroach, Spider-Hero, Straw Hat Kid. The choice is remembered.
 
 ## Customising
 - `assets/posters/manifest.json` - meme posters by role: `banner`, `road`, `standee`, `building`.

@@ -71,7 +71,7 @@ export class Stage3D {
     if (have) { this.scene.remove(have.root); delete this.heroes[id]; }
     let built = null;
     if (id === 'cockroach') built = this.buildKitHero();
-    else if (kit.custom[id]) built = buildFileHero(kit.custom[id]);
+    else if (kit.custom[id]) built = buildFileHero(id, kit.custom[id]);
     else built = buildMiniHero(id, kit.mini[id]);
     if (built) {
       this.scene.add(built.root);
@@ -215,9 +215,9 @@ export class Stage3D {
     }
     if (menu) {
       // Start-screen showpiece: hop and sway (facing the camera) on top of the dance clip.
-      hn.position.set(0, Math.abs(Math.sin(this.clock * 5)) * 0.18, 0);
+      hn.position.set((this.menuSlide ?? 0) * -2.6, Math.abs(Math.sin(this.clock * 5)) * 0.18, 0);
       hn.rotation.set(0, Math.PI + Math.sin(this.clock * 1.6) * 0.8, Math.sin(this.clock * 5) * 0.08);
-      hn.scale.set(1.1, 1.1, 1.1);
+      hn.scale.set(1.2, 1.2, 1.2);
       hn.visible = true;
       if (this.heroMixer) this.heroMixer.timeScale = 1;
     } else {
@@ -272,9 +272,9 @@ export class Stage3D {
       const py = this.camY + (Math.random() - 0.5) * shake;
       // Menu: close front-on shot of the hero, framed in the upper half so the dial sits below.
       const half = (fovFor(this.camera.aspect) * Math.PI) / 360;
-      const axis = Math.atan((1.9 - 1.0) / 10) + Math.atan(0.2 * Math.tan(half));
-      const mlookY = 1.9 - 10 * Math.tan(axis);
-      this.camera.position.set(px * (1 - mb), py + (1.9 - py) * mb, 8 + (10 - 8) * mb);
+      const axis = Math.atan((1.5 - 1.0) / 7.5) + Math.atan(0.28 * Math.tan(half));
+      const mlookY = 1.5 - 7.5 * Math.tan(axis);
+      this.camera.position.set(px * (1 - mb), py + (1.5 - py) * mb, 8 + (7.5 - 8) * mb);
       this.camera.lookAt(x * 0.5 * (1 - mb), 1.4 + p.y * 0.45 + (mlookY - 1.4 - p.y * 0.45) * mb, -12 * (1 - mb));
     }
     const baseFov = fovFor(this.camera.aspect) + Math.min(10, Math.max(0, (g.speed - 30) / 4));

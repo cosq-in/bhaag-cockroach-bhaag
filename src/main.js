@@ -5,7 +5,7 @@ import { attachInput } from './input.js';
 import { loadKit } from './kit.js';
 import { loadPosters } from './posters.js';
 import { initAudio, sfx, toggleMute, setPaused, setVoice } from './audio.js';
-import { Dial, normalizeCharacter, dialLayout, holeAt } from './dial.js';
+import { Carousel, normalizeCharacter, carouselLayout, cardAt } from './carousel.js';
 
 const HI_KEY = 'delhiRunner3dHi';
 const TUT_KEY = 'delhiRunner3dTutorial';
@@ -57,7 +57,7 @@ const qs0 = new URLSearchParams(location.search);
 if (qs0.has('resettut')) { try { localStorage.removeItem(TUT_KEY); } catch { /* ignore */ } }
 const game = createGame(Math.random, loadHi(), loadSeen());
 
-const dial = new Dial(loadChar());
+const dial = new Carousel(new URLSearchParams(location.search).get('char') ?? loadChar());
 let shownChar = null;
 function syncCharacter() {
   const id = dial.character.id;
@@ -75,7 +75,7 @@ attachInput(worldCanvas, (intent, pos) => {
   if (game.state === 'menu') {
     if (intent === 'left' || intent === 'right') { dial.step(intent === 'left' ? -1 : 1); sfx('power'); return; }
     if (intent === 'tap' && pos) {
-      const i = holeAt(pos.x, pos.y, dialLayout(w, h), dial);
+      const i = cardAt(pos.x, pos.y, carouselLayout(w, h), dial);
       if (i >= 0) { if (i !== dial.index) sfx('power'); dial.select(i); return; }
     }
   }
@@ -155,6 +155,7 @@ function frame(now) {
   lathiHits();
   dial.update(dt);
   syncCharacter();
+  stage3d.menuSlide = dial.lag;
   stage3d.render(game, dt);
   drawHud(hud, w, h, game, dial);
   requestAnimationFrame(frame);
