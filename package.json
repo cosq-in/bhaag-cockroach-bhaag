@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
+    "build": "node --env-file-if-exists=.env build.mjs",
     "start": "node --env-file-if-exists=.env serve.mjs"
   }
 }

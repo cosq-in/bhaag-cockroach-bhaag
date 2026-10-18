@@ -4,7 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = path.dirname(fileURLToPath(import.meta.url));
+export const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const TYPES = {
   html: 'text/html; charset=utf-8',
   css: 'text/css; charset=utf-8',
@@ -37,8 +37,18 @@ function computeBuild() {
 }
 export const BUILD = computeBuild();
 
+// The public PostHog browser config as a script (served live, or written at build time for static hosts).
+export function posthogConfigJs(env) {
+  const config = JSON.stringify({
+    projectToken: env.POSTHOG_PROJECT_TOKEN,
+    host: env.POSTHOG_HOST,
+    debug: env.NODE_ENV !== 'production',
+  });
+  return `window.POSTHOG_CONFIG = ${config};`;
+}
+
 // index.html with the build id stamped in and every module URL versioned through the import map.
-function renderIndex(html) {
+export function renderIndex(html) {
   const imports = { three: `./vendor/three.module.js?v=${BUILD}`, 'three/addons/': './vendor/jsm/' };
   for (const f of fs.readdirSync(path.join(ROOT, 'src'))) {
     if (/^[a-z]+(?:-[a-z]+)*\.js$/.test(f)) imports[`./src/${f}`] = `./src/${f}?v=${BUILD}`;
@@ -49,7 +59,7 @@ function renderIndex(html) {
 }
 
 // Maps a request path to a file on the allowlist, or null.
-function resolve(rawUrl) {
+export function resolve(rawUrl) {
   const raw = rawUrl.split('?')[0].split('#')[0];
   if (/%2e|%2f|%5c|\\/i.test(raw) || raw.includes('..')) return null;
   let p;
@@ -76,12 +86,7 @@ export function createServer() {
     const fail = (code) => { res.writeHead(code, { ...headers, 'Content-Type': 'text/plain' }); res.end(code === 405 ? 'Method Not Allowed' : 'Not Found'); };
     if (req.method !== 'GET' && req.method !== 'HEAD') return fail(405);
     if ((req.url ?? '').split('?')[0] === '/posthog-config.js') {
-      const config = JSON.stringify({
-        projectToken: process.env.POSTHOG_PROJECT_TOKEN,
-        host: process.env.POSTHOG_HOST,
-        debug: process.env.NODE_ENV !== 'production',
-      });
-      const data = `window.POSTHOG_CONFIG = ${config};`;
+      const data = posthogConfigJs(process.env);
       res.writeHead(200, { ...headers, 'Content-Type': TYPES.js, 'Content-Length': Buffer.byteLength(data) });
       return res.end(req.method === 'HEAD' ? undefined : data);
     }

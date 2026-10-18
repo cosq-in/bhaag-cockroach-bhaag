@@ -1,0 +1,15 @@
+{
+  "buildCommand": "node build.mjs",
+  "outputDirectory": "dist",
+  "headers": [
+    {
+      "source": "/(src|assets|vendor)/(.*)",
+      "has": [{ "type": "query", "key": "v" }],
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    },
+    {
+      "source": "/(index.html|version.json|posthog-config.js)",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+    }
+  ]
+}

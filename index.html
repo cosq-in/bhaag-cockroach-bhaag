@@ -15,7 +15,7 @@
   <script>window.BUILD = '__BUILD__';</script>
   <script src="/posthog-config.js"></script>
   <script>
-    const posthogConfig = window.POSTHOG_CONFIG;
+    const posthogConfig = window.POSTHOG_CONFIG ?? {};
     window.POSTHOG_READY = Promise.resolve(null);
     if (!posthogConfig.projectToken) {
       if (posthogConfig.debug) throw new Error('POSTHOG_PROJECT_TOKEN variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once POSTHOG_PROJECT_TOKEN is configured');
