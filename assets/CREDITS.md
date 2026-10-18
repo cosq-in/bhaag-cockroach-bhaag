@@ -14,6 +14,6 @@ The fallback inspector, buses, ramps and obstacles are original procedural model
 
 - Posters: no third-party images. When `assets/posters/manifest.json` is empty the game draws original cartoon stand-ins in code (src/posters.js); add your own sketches there to override them.
 - Sound: no third-party clips. All effects are synthesized with WebAudio (src/audio.js). `sfx/manifest.json` can still point events at your own files.
-- `models/spiderman/spiderman.glb` - Mixamo-rigged Spider-Man GLB supplied by the project owner (run, stand and swing clips). Original author and licence are unverified; check before any public release. Character rights belong to their owners; this is fan satire.
-- `models/luffy/luffy.glb` - "one piece bounty rush luffy (2ysl)" by Primalfrom12 (https://sketchfab.com/3d-models/one-piece-bounty-rush-luffy-2ysl-df3410599cc24d5b91e44c86413fc858), CC BY 4.0. Character rights belong to their owners; this is fan satire.
+- `models/spiderman/spiderman.glb` - "Spiderman" (https://sketchfab.com/3d-models/spiderman-b0e695e8483f46f88943173a70be9709) by nitwit.friends, licensed under Creative Commons Attribution 4.0 (http://creativecommons.org/licenses/by/4.0/). Rigged with Mixamo animations. Character rights belong to their owners; this is fan satire.
+- `models/luffy/luffy.glb` - "one piece bounty rush luffy (2ysl)" (https://skfb.ly/pyw7v) by Primalfrom12, licensed under Creative Commons Attribution 4.0 (http://creativecommons.org/licenses/by/4.0/). Character rights belong to their owners; this is fan satire.
 - If those two files are absent, the game falls back to the Kenney Mini Characters rig (CC0) costumed in code (src/characters.js).
