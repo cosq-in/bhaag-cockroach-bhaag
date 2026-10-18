@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mat, canvasTex, makeHero, makeInspector } from './models.js';
 import { WorldView, Scenery, RoadDressing, laneX } from './world-view.js';
 import { kit } from './kit.js';
+import { buildMiniHero } from './characters.js';
 
 const fovFor = (aspect) => (aspect < 1 ? 78 : 62);
 
@@ -60,9 +61,24 @@ export class Stage3D {
     this.resize(1, 1);
   }
 
-  // Swap the procedural cockroach for the rigged CC0-style model once it has loaded.
-  useKitHero() {
-    if (this.heroRoot || !kit.hero) return;
+  setCharacter(id) { this.charId = id; }
+
+  // Build (once) the rigged model for a character; null until its asset has loaded.
+  ensureHero(id) {
+    this.heroes ??= {};
+    if (this.heroes[id]) return this.heroes[id];
+    let built = null;
+    if (id === 'cockroach') built = this.buildKitHero();
+    else built = buildMiniHero(id, kit.mini[id]);
+    if (built) {
+      this.scene.add(built.root);
+      this.heroes[id] = built;
+    }
+    return built;
+  }
+
+  buildKitHero() {
+    if (!kit.hero) return null;
     const model = kit.hero.scene;
     const box = new THREE.Box3().setFromObject(model);
     const size = box.getSize(new THREE.Vector3());
@@ -71,13 +87,12 @@ export class Stage3D {
     const b2 = new THREE.Box3().setFromObject(model);
     model.position.set(-(b2.min.x + b2.max.x) / 2, -b2.min.y, -(b2.min.z + b2.max.z) / 2);
     model.rotation.y = Math.PI;
-    this.heroRoot = new THREE.Group();
-    this.heroRoot.add(model);
-    this.scene.add(this.heroRoot);
-    this.hero.group.visible = false;
-    this.heroMixer = new THREE.AnimationMixer(model);
+    const root = new THREE.Group();
+    root.add(model);
+    const mixer = new THREE.AnimationMixer(model);
     const clip = kit.hero.animations.find((a) => a.name === 'run_loop') ?? kit.hero.animations[0];
-    if (clip) this.heroMixer.clipAction(clip).play();
+    if (clip) mixer.clipAction(clip).play();
+    return { root, mixer };
   }
 
   // Dress the CC0 Kenney mini character as a khaki-clad constable with cap and lathi.
@@ -168,7 +183,11 @@ export class Stage3D {
     const p = g.player;
     const x = laneX(p.visualLane);
 
-    this.useKitHero();
+    const active = this.ensureHero(this.charId ?? 'cockroach') ?? (this.charId !== 'cockroach' ? this.ensureHero('cockroach') : null);
+    for (const hr of Object.values(this.heroes ?? {})) hr.root.visible = hr === active;
+    this.heroRoot = active?.root;
+    this.heroMixer = active?.mixer;
+    this.hero.group.visible = !active;
     const hn = this.heroRoot ?? this.hero.group;
     hn.position.set(x, p.y, 0);
     hn.rotation.z = (p.visualLane - p.lane) * 0.35;
@@ -183,7 +202,7 @@ export class Stage3D {
         this.heroMixer.timeScale = 0.05;
       } else {
         this.heroRoot.scale.set(1, p.sliding ? 0.6 : 1, 1);
-        this.heroMixer.timeScale = g.state === 'play' && p.grounded ? 1 : 0.3;
+        this.heroMixer.timeScale = g.state === 'menu' ? 0.7 : g.state === 'play' && p.grounded ? 1 : 0.3;
       }
       this.heroMixer.update(dt);
     } else {

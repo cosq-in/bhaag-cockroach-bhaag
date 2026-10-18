@@ -1,4 +1,5 @@
 import { MAX_GAP } from './chaser.js';
+import { ROSTER, dialLayout, holePos } from './dial.js';
 
 const FONT = '"Permanent Marker","Marker Felt","Comic Sans MS",cursive';
 const BANKED_ICON = { meme: '😂', wifi: '📶', shield: '🛡️' };
@@ -47,7 +48,34 @@ function overlay(ctx, w, h, u, lines, { y0 = 0.28, dim = 0.65 } = {}) {
   for (const [s, size, color] of lines) y = block(ctx, s, w / 2, y, Math.max(14, size * u), color, w - 24) + size * u * 0.25;
 }
 
-export function drawHud(ctx, w, h, g) {
+function drawDial(ctx, w, h, u, dial) {
+  const lay = dialLayout(w, h);
+  const { cx, cy, r, holeR } = lay;
+  ctx.fillStyle = 'rgba(20,12,35,0.88)';
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#ffd27a'; ctx.lineWidth = 4;
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(255,210,122,0.18)';
+  ctx.beginPath(); ctx.arc(cx, cy, r * 0.28, 0, Math.PI * 2); ctx.fill();
+  ROSTER.forEach((c, i) => {
+    const p = holePos(lay, dial, i);
+    const sel = i === dial.index;
+    ctx.fillStyle = sel ? '#3d2a63' : '#120a20';
+    ctx.beginPath(); ctx.arc(p.x, p.y, holeR, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = sel ? '#7CFC9A' : '#8a7aa8'; ctx.lineWidth = sel ? 4 : 2; ctx.stroke();
+    ctx.font = `${holeR * 1.2}px sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff';
+    ctx.fillText(c.icon, p.x, p.y + holeR * 0.05);
+  });
+  ctx.fillStyle = '#ff6b6b';
+  ctx.beginPath(); ctx.moveTo(cx - 10, cy - r - 4); ctx.lineTo(cx + 10, cy - r - 4); ctx.lineTo(cx, cy - r + 12); ctx.fill();
+  const nameSz = Math.max(20, 28 * u);
+  text(ctx, dial.character.name, cx, cy - r - nameSz * 1.5, nameSz, '#7CFC9A');
+  text(ctx, 'Turn the dial: swipe or tap a hole', cx, cy - r - nameSz * 2.5, Math.max(12, 14 * u), '#ddd');
+}
+
+export function drawHud(ctx, w, h, g, dial) {
   ctx.clearRect(0, 0, w, h);
   const u = Math.min(w / 500, h / 700);
   const fs = Math.max(16, 22 * u);
@@ -108,13 +136,12 @@ export function drawHud(ctx, w, h, g) {
 
   if (g.state === 'menu') {
     overlay(ctx, w, h, u, [
-      ['BHAAG COCKROACH BHAAG', 44, '#ffd27a'],
-      ['Resign kar yaar.', 22, '#ff9f6b'],
-      ['Cockroach Janta Party edition (fan satire)', 20, '#fff'],
-      [g.touch ? 'Swipe left/right to change lane, up to jump, down to slide. Tap = power-up.' : 'Arrows / WASD to run. Space for power-ups.', 16, '#ddd'],
-      ['Run up ramps onto buses. Dodge the inspector. Collect witnesses.', 16, '#ddd'],
-      [g.touch ? 'Tap to start' : 'Tap or press Enter to start', 26, '#7CFC9A'],
-    ]);
+      ['BHAAG COCKROACH BHAAG', 40, '#ffd27a'],
+      ['Resign kar yaar.', 20, '#ff9f6b'],
+      [g.touch ? 'Swipe to dodge, tap = power-up' : 'Arrows / WASD to run, Space = power-up', 15, '#ddd'],
+    ], { y0: 0.04, dim: 0.35 });
+    if (dial) drawDial(ctx, w, h, u, dial);
+    text(ctx, g.touch ? 'Tap the screen to start' : 'Tap or press Enter to start', w / 2, h * 0.25, Math.max(18, 24 * u), '#7CFC9A');
   } else if (g.state === 'over') {
     const hit = Math.floor(g.overT / 0.55);
     const phase = (g.overT % 0.55) / 0.55;

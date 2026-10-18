@@ -1,18 +1,1 @@
-{
-  "banner": [
-    "poster1.webp",
-    "poster2.webp"
-  ],
-  "road": [
-    "poster2.webp",
-    "poster3.webp"
-  ],
-  "standee": [
-    "poster3.webp"
-  ],
-  "building": [
-    "poster1.webp",
-    "poster2.webp",
-    "poster3.webp"
-  ]
-}
+{ "banner": [], "road": [], "standee": [], "building": [] }

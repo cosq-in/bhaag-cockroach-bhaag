@@ -85,11 +85,11 @@ export function attachInput(target, onIntent) {
     const t = tracked(e);
     if (!t) return;
     const tap = swipe.end(t.identifier);
-    if (tap) onIntent(tap);
+    if (tap) onIntent(tap, { x: t.clientX, y: t.clientY });
   }, { passive: false });
   target.addEventListener('touchcancel', (e) => {
     const t = tracked(e);
     if (t) swipe.end(t.identifier);
   });
-  target.addEventListener('mousedown', () => onIntent('tap'));
+  target.addEventListener('mousedown', (e) => onIntent('tap', { x: e.clientX, y: e.clientY }));
 }

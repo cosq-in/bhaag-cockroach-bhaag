@@ -36,6 +36,32 @@ function playSample(name) {
   return true;
 }
 
+let voice = 1; // per-character pitch colour for the synthesized stingers
+export function setVoice(id) { voice = { spiderman: 1.26, luffy: 0.84 }[id] ?? 1; }
+
+function slide(f0, f1, dur, type = 'sawtooth', vol = 0.06, delay = 0, vib = 0) {
+  if (!ctx || muted || ctx.state !== 'running') return;
+  const t = ctx.currentTime + delay;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(f0, t);
+  osc.frequency.exponentialRampToValueAtTime(f1, t + dur);
+  if (vib) {
+    const lfo = ctx.createOscillator();
+    const depth = ctx.createGain();
+    lfo.frequency.value = vib;
+    depth.gain.value = f0 * 0.05;
+    lfo.connect(depth).connect(osc.frequency);
+    lfo.start(t); lfo.stop(t + dur);
+  }
+  gain.gain.setValueAtTime(vol, t);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + dur);
+}
+
 const SCALE = [0, 3, 5, 7, 10];
 const MELODY = [5, 7, 6, 5, 4, 2, 3, 4, 5, 7, 8, 7, 6, 4, 5, 3];
 const freqOf = (deg) => 220 * 2 ** ((SCALE[deg % 5] + 12 * Math.floor(deg / 5)) / 12);
@@ -95,7 +121,15 @@ export function sfx(name) {
   switch (name) {
     case 'pickup': tone(880, 0.08); tone(1320, 0.1, 'square', 0.04, 0.06); break;
     case 'stumble': tone(140, 0.25, 'sawtooth', 0.07); break;
-    case 'caught': [440, 330, 220, 110].forEach((f, i) => tone(f, 0.25, 'sawtooth', 0.06, i * 0.15)); break;
+    case 'chai': tone(784 * voice, 0.12, 'sine', 0.08); tone(1175 * voice, 0.22, 'sine', 0.07, 0.09); break;
+    case 'witness': tone(660 * voice, 0.08, 'triangle', 0.07); tone(990 * voice, 0.16, 'triangle', 0.07, 0.07); break;
+    case 'start': [392, 494, 587, 784].forEach((f, i) => tone(f * voice, 0.12, 'square', 0.04, i * 0.06)); break;
+    // Comedic "wah wah waaah" trombone: three falling, wobbling slides.
+    case 'caught':
+      slide(311 * voice, 294 * voice, 0.28, 'sawtooth', 0.06, 0, 6);
+      slide(294 * voice, 277 * voice, 0.28, 'sawtooth', 0.06, 0.32, 6);
+      slide(277 * voice, 233 * voice, 0.9, 'sawtooth', 0.06, 0.64, 9);
+      break;
     case 'revive': [330, 440, 660, 880].forEach((f, i) => tone(f, 0.15, 'square', 0.05, i * 0.08)); break;
     case 'power': [523, 659, 784].forEach((f, i) => tone(f, 0.18, 'triangle', 0.06, i * 0.07)); break;
     default: break;

@@ -4,10 +4,12 @@ import { drawHud } from './hud.js';
 import { attachInput } from './input.js';
 import { loadKit } from './kit.js';
 import { loadPosters } from './posters.js';
-import { initAudio, sfx, toggleMute, setPaused } from './audio.js';
+import { initAudio, sfx, toggleMute, setPaused, setVoice } from './audio.js';
+import { Dial, normalizeCharacter, dialLayout, holeAt } from './dial.js';
 
 const HI_KEY = 'delhiRunner3dHi';
 const TUT_KEY = 'delhiRunner3dTutorial';
+const CHAR_KEY = 'bhaagCharacter';
 const STEP = 1 / 60;
 
 function loadHi() { try { return Number(localStorage.getItem(HI_KEY)) || 0; } catch { return 0; } }
@@ -15,6 +17,8 @@ function loadSeen() {
   try { const v = JSON.parse(localStorage.getItem(TUT_KEY) ?? '[]'); return Array.isArray(v) ? v : []; } catch { return []; }
 }
 function saveSeen(set) { try { localStorage.setItem(TUT_KEY, JSON.stringify([...set])); } catch { /* storage unavailable */ } }
+function loadChar() { try { return normalizeCharacter(localStorage.getItem(CHAR_KEY)); } catch { return normalizeCharacter(null); } }
+function saveChar(v) { try { localStorage.setItem(CHAR_KEY, v); } catch { /* storage unavailable */ } }
 function saveHi(v) { try { localStorage.setItem(HI_KEY, String(v)); } catch { /* storage unavailable */ } }
 
 const worldCanvas = document.getElementById('world');
@@ -53,10 +57,28 @@ const qs0 = new URLSearchParams(location.search);
 if (qs0.has('resettut')) { try { localStorage.removeItem(TUT_KEY); } catch { /* ignore */ } }
 const game = createGame(Math.random, loadHi(), loadSeen());
 
-attachInput(worldCanvas, (intent) => {
+const dial = new Dial(loadChar());
+let shownChar = null;
+function syncCharacter() {
+  const id = dial.character.id;
+  if (id === shownChar) return;
+  shownChar = id;
+  stage3d.setCharacter(id);
+  setVoice(id);
+  saveChar(id);
+}
+
+attachInput(worldCanvas, (intent, pos) => {
   initAudio();
   if (intent === 'touch') { game.touch = true; return; }
   if (intent === 'mute') { toggleMute(); return; }
+  if (game.state === 'menu') {
+    if (intent === 'left' || intent === 'right') { dial.step(intent === 'left' ? -1 : 1); sfx('power'); return; }
+    if (intent === 'tap' && pos) {
+      const i = holeAt(pos.x, pos.y, dialLayout(w, h), dial);
+      if (i >= 0) { if (i !== dial.index) sfx('power'); dial.select(i); return; }
+    }
+  }
   applyIntent(game, intent);
 });
 
@@ -94,7 +116,7 @@ function drainEvents() {
     sfx(name);
     buzz(name);
     if (name === 'start') {
-      captureGameEvent('run_started');
+      captureGameEvent('run_started', { character: dial.character.id });
       logGameLifecycle('game run started', { event: 'run_started' });
     }
     if (name === 'chai') captureGameEvent('chai_collected');
@@ -131,8 +153,10 @@ function frame(now) {
   while (acc >= STEP) { step(game, STEP); acc -= STEP; }
   drainEvents();
   lathiHits();
+  dial.update(dt);
+  syncCharacter();
   stage3d.render(game, dt);
-  drawHud(hud, w, h, game);
+  drawHud(hud, w, h, game, dial);
   requestAnimationFrame(frame);
 }
 

@@ -12,6 +12,9 @@ Open it on a phone through a tunnel (for example `ngrok http 127.0.0.1:8000`).
 ## Controls
 Swipe left/right to change lane, up to jump, down to slide, tap to use a banked power-up. Keyboard: arrows or WASD, Space, M to mute.
 
+## Characters
+Pick on the start screen with the rotary dial (swipe, arrow keys, or tap a hole): Cockroach, Spider-Hero, Straw Hat Kid. The choice is remembered.
+
 ## Customising
 - `assets/posters/manifest.json` - meme posters by role: `banner`, `road`, `standee`, `building`.
 - `assets/sfx/manifest.json` - custom sound clips per game event (see `assets/sfx/README.md`).
@@ -25,4 +28,4 @@ Anonymous play events (run started/ended, chai, witness, power-ups, WiFi revive)
 `serve.mjs` serves only the game files, so `.git`, docs and tests are never exposed. Do not replace it with a general static server when sharing publicly.
 
 ## Credits
-See `assets/CREDITS.md`. Three.js is MIT (`vendor/THREE-LICENSE`). Kenney models are CC0. The humanoid cockroach is by Gandpop. The meme posters and sound clips were supplied by the project owner; their provenance and licences are unverified, so check them before any public release.
+See `assets/CREDITS.md`. Three.js is MIT (`vendor/THREE-LICENSE`). Kenney models are CC0. The humanoid cockroach is by Gandpop. Posters and sounds are generated in code; no real-person likeness or voice is used.
