@@ -26,7 +26,7 @@ test('every pattern leaves a free lane or is a uniform jump/slide row', () => {
     for (let n = 0; n < 20; n++) {
       const before = s.items.length;
       s.spawnPattern(stage, n / 19);
-      const obs = s.items.slice(before).filter((it) => it.cat === 'obstacle' && it.kind !== 'gas');
+      const obs = s.items.slice(before).filter((it) => it.cat === 'obstacle' && it.kind !== 'gas' && it.kind !== 'crowd');
       const busy = new Set(obs.filter((o) => o.kind !== 'low' || obs.some((x) => x.kind === 'bus' || x.kind === 'block'))
         .map((o) => Math.round(o.lane)));
       const uniform = obs.length === 3 && ['low', 'high'].some((k) => obs.every((o) => o.kind === k));
@@ -85,4 +85,34 @@ test('gas drifts across lanes unless meme drop is active', () => {
   assert.equal(s.items[0].lane, 1);
   s.update(0.1, 0, stage, 0, false);
   assert.ok(s.items[0].lane > 1);
+});
+
+test('stampede: 12 walkers, exactly one lane free on arrival, whatever the speed', () => {
+  const s = new Spawner(() => 0.46);
+  s.spawnPattern(stage, 0.5);
+  const crowd = s.items.filter((it) => it.kind === 'crowd');
+  assert.equal(crowd.length, 12);
+  s.cooldown = 1e9;
+  // Walk the group in at a few different speeds until the front reaches the player.
+  for (const speed of [20, 33, 47]) {
+    const g = new Spawner(() => 0.46);
+    g.spawnPattern(stage, 0.5);
+    g.cooldown = 1e9;
+    for (let i = 0; i < 6000 && g.items.some((it) => it.kind === 'crowd' && it.z > 0); i++) g.update(1 / 60, speed, stage, 0.5, false);
+    const free = [0, 1, 2].filter((l) => !g.items.some((it) => it.kind === 'crowd' && Math.abs(it.z) < 1.2 && Math.abs(it.lane - l) < 0.5));
+    assert.equal(free.length, 1, `speed ${speed}`);
+    assert.equal(free[0], g.lastOpen);
+  }
+});
+
+test('stampede walkers start off to one side and converge', () => {
+  const s = new Spawner(() => 0.46);
+  s.spawnPattern(stage, 0.5);
+  const cr = s.items.filter((it) => it.kind === 'crowd');
+  const mean = (a) => a.reduce((x, y) => x + y, 0) / a.length;
+  const before = mean(cr.map((c) => c.lane));
+  s.cooldown = 1e9;
+  s.update(1, 30, stage, 0.5, false);
+  const after = mean(cr.map((c) => c.lane));
+  assert.ok(Math.abs(after - s.lastOpen) < Math.abs(before - s.lastOpen));
 });

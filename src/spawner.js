@@ -1,6 +1,9 @@
 export const Z_FAR = 120;
 export const BUS_LEN = 12;
 export const RAMP_LEN = 6;
+export const CROWD_TRAVEL = 4; // lanes the crowd walks across while approaching
+const CROWD_STEP = 0.3;
+const CROWD_PER_SIDE = 6;
 
 const pick = (rng, arr) => arr[Math.floor(rng() * arr.length)];
 
@@ -20,6 +23,8 @@ export class Spawner {
     const dz = speed * dt;
     for (const it of this.items) {
       it.z -= dz;
+      // Stampede members walk sideways in step with the approach, so the gap is always lined up on arrival.
+      if (it.crowd) it.lane = it.crowd.gap + it.crowd.dir * CROWD_TRAVEL * Math.max(0, it.z / Z_FAR) + it.crowd.off;
       if (it.drift && !memeActive) {
         it.lane += it.drift * dt;
         if (it.lane < 0 || it.lane > 2) {
@@ -78,6 +83,7 @@ export class Spawner {
         { drift: (this.rng() < 0.5 ? -1 : 1) * 1.5 });
       return 4;
     }
+    if (r >= 0.42 && r < 0.50 && difficulty > 0.1) return this.#stampede(stage);
     if (r >= 0.92) {
       this.#coins(stage, this.#pickOpen(), 6, 0);
       return 18;
@@ -92,6 +98,21 @@ export class Spawner {
     }
     this.#coins(stage, open, 4, 0);
     return 10;
+  }
+
+  // 12 people walk across the road in a line with one lane-wide gap that is exactly on a lane when they arrive.
+  #stampede(stage) {
+    const gap = this.#pickOpen();
+    const dir = this.rng() < 0.5 ? -1 : 1;
+    for (const side of [-1, 1]) {
+      for (let k = 0; k < CROWD_PER_SIDE; k++) {
+        const off = side * (0.62 + k * CROWD_STEP);
+        this.#add(stage, 'obstacle', 'crowd', gap + dir * CROWD_TRAVEL + off, (this.rng() - 0.5) * 0.8,
+          { crowd: { gap, dir, off }, phase: this.rng() * 6.28 });
+      }
+    }
+    this.#coins(stage, gap, 4, 0);
+    return 12;
   }
 
   #busRamp(stage) {

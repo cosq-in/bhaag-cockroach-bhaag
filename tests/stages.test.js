@@ -22,7 +22,7 @@ test('stage 2 is endless and has its own boss window', () => {
 
 test('every stage defines hazards for all obstacle kinds and slogans', () => {
   for (const s of STAGES) {
-    for (const k of ['low', 'high', 'block', 'gas']) assert.ok(s.hazards[k].length > 0, `${s.name} ${k}`);
+    for (const k of ['low', 'high', 'block', 'gas', 'crowd']) assert.ok(s.hazards[k].length > 0, `${s.name} ${k}`);
     assert.ok(s.slogans.length >= 3);
   }
 });

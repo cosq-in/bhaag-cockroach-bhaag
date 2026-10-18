@@ -53,6 +53,12 @@
   <canvas id="world"></canvas>
   <canvas id="hud"></canvas>
   <div id="msg" hidden></div>
+  <div id="poster-ui" hidden>
+    <label class="pill" for="poster-file">Add your posters</label>
+    <input id="poster-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
+    <button id="poster-reset" class="pill" type="button" hidden>Reset posters</button>
+    <small>Images stay on your device and are never uploaded.</small>
+  </div>
   <script type="module" src="src/main.js"></script>
 </body>
 </html>

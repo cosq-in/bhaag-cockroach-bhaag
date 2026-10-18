@@ -47,3 +47,10 @@ test('pickups are collected by height too', () => {
   assert.ok(collectsPickup(p, pk(1, 0, 2.9)));
   assert.ok(!collectsPickup(p, ob('block')));
 });
+
+test('a stampede walker blocks its lane but can be vaulted from a bus roof', () => {
+  const p = new Player();
+  assert.ok(hitsObstacle(p, { cat: 'obstacle', kind: 'crowd', lane: 1, z: 0, dead: false }));
+  p.y = 2.9;
+  assert.ok(!hitsObstacle(p, { cat: 'obstacle', kind: 'crowd', lane: 1, z: 0, dead: false }));
+});

@@ -12,7 +12,7 @@ Downloaded from opengameart.org mirrors of the official Kenney releases. Attribu
 
 The fallback inspector, buses, ramps and obstacles are original procedural models in src/models.js. The procedural cockroach in src/models.js is kept as a fallback if the hero model fails to load.
 
-- Posters: no third-party images. When `assets/posters/manifest.json` is empty the game draws original cartoon stand-ins in code (src/posters.js); add your own sketches there to override them.
+- Posters: no third-party images are bundled. The built-in posters are generic faceless slogan cards drawn in code (src/posters.js). Players can add their own images on their device (src/poster-store.js); those never leave the browser.
 - Sound: no third-party clips. All effects are synthesized with WebAudio (src/audio.js). `sfx/manifest.json` can still point events at your own files.
 - `models/spiderman/spiderman.glb` - "Spiderman" (https://sketchfab.com/3d-models/spiderman-b0e695e8483f46f88943173a70be9709) by nitwit.friends, licensed under Creative Commons Attribution 4.0 (http://creativecommons.org/licenses/by/4.0/). Rigged with Mixamo animations. Character rights belong to their owners; this is fan satire.
 - `models/luffy/luffy.glb` - "one piece bounty rush luffy (2ysl)" (https://skfb.ly/pyw7v) by Primalfrom12, licensed under Creative Commons Attribution 4.0 (http://creativecommons.org/licenses/by/4.0/). Character rights belong to their owners; this is fan satire.

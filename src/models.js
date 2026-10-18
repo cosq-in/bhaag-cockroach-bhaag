@@ -121,9 +121,41 @@ export function makeRamp(len) {
   return g;
 }
 
+const SHIRTS = ['#d94f4f', '#e8b030', '#3f8fd6', '#59b36b', '#b05cc9', '#f2f2f2', '#ff8a3d'];
+const SKINS = ['#e2aa7c', '#c68642', '#a9714a', '#f0c4a0'];
+// One member of the walking stampede; legs and arms are exposed in userData for the walk cycle.
+function makePerson() {
+  const g = new THREE.Group();
+  const pick = (a) => a[Math.floor(Math.random() * a.length)];
+  const shirt = mat(pick(SHIRTS));
+  const skin = mat(pick(SKINS));
+  const limb = (w, h, x, y, m) => {
+    const pivot = new THREE.Group();
+    pivot.position.set(x, y, 0);
+    const part = box(w, h, w, m, 0, -h / 2, 0);
+    pivot.add(part);
+    g.add(pivot);
+    return pivot;
+  };
+  g.add(box(0.46, 0.62, 0.26, shirt, 0, 1.12, 0));
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 10, 8), skin);
+  head.position.set(0, 1.62, 0);
+  g.add(head);
+  const legs = [limb(0.17, 0.82, -0.12, 0.82, mat('#2c3550')), limb(0.17, 0.82, 0.12, 0.82, mat('#2c3550'))];
+  const arms = [limb(0.12, 0.6, -0.3, 1.4, skin), limb(0.12, 0.6, 0.3, 1.4, skin)];
+  if (Math.random() < 0.4) { // raised placard
+    arms[1].rotation.x = Math.PI;
+    g.add(box(0.05, 0.9, 0.05, mat('#5b4636'), 0.3, 1.9, 0.05), box(0.6, 0.4, 0.04, mat(pick(SHIRTS)), 0.3, 2.25, 0.05));
+  }
+  g.userData.legs = legs;
+  g.userData.arms = arms;
+  return g;
+}
+
 export function makeObstacle(it) {
   const g = new THREE.Group();
   const { kind, label } = it;
+  if (kind === 'crowd') return makePerson();
   if (label === 'auto') return makeRickshaw();
   if (label === 'standee') return makeStandee();
   if (kind === 'block' && label !== 'SIR form') {

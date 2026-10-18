@@ -1,5 +1,5 @@
 export const HIT_DEPTH = 1.2;
-const CLEAR_Y = { low: 0.8, block: 1.9, gas: 1.0 };
+const CLEAR_Y = { low: 0.8, block: 1.9, gas: 1.0, crowd: 1.9 };
 
 const sameLane = (a, b) => Math.abs(a - b) < 0.5;
 const inDepth = (z) => Math.abs(z) < HIT_DEPTH;

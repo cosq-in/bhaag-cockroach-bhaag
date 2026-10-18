@@ -16,10 +16,10 @@ Swipe left/right to change lane, up to jump, down to slide, tap to use a banked 
 Pick on the start screen with the swipe carousel (swipe, arrow keys, or tap a card): Cockroach, Spider-Hero, Straw Hat Kid. The choice is remembered.
 
 ## Customising
-- `assets/posters/manifest.json` - meme posters by role: `banner`, `road`, `standee`, `building`.
+- Posters: on the start screen, "Add your posters" lets each player pick images from their own device. They are downscaled and kept in the browser (IndexedDB), never uploaded, and replace the built-in generic slogan posters everywhere. "Reset posters" removes them. `assets/posters/manifest.json` can still list bundled posters by role (`banner`, `road`, `standee`, `building`); it ships empty.
 - `assets/sfx/manifest.json` - custom sound clips per game event (see `assets/sfx/README.md`).
 - `src/stages.js` - stages, hazards, slogans (the slogans are tone placeholders).
-- Dev flags: `?autostart`, `?skip=N`, `?over`, `?tut=chai`, `?resettut`.
+- Dev flags: `?autostart`, `?stampede`, `?skip=N`, `?over`, `?tut=chai`, `?resettut`.
 
 ## Analytics (PostHog, optional)
 Anonymous play events (run started/ended, chai, witness, power-ups, WiFi revive) are sent to PostHog when `POSTHOG_PROJECT_TOKEN` and `POSTHOG_HOST` are set. Copy `.env.example` to `.env` and fill them in; `npm start` loads it (needs Node 22.9+). Without them nothing is sent. Autocapture, session replay and Do-Not-Track-ignoring are disabled. Only the public project token is used; never put a personal API key (`phx_...`) in this repo.

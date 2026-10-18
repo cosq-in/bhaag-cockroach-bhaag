@@ -41,6 +41,15 @@ export class WorldView {
       if (it.cat === 'pickup') {
         m.position.y = (it.y ?? 0.9) + Math.sin(t * 5 + it.z) * 0.08;
         m.rotation.y = t * 3;
+      } else if (it.kind === 'crowd') {
+        const sw = Math.sin(t * 9 + it.phase);
+        const [l0, l1] = m.userData.legs;
+        const [a0, a1] = m.userData.arms;
+        l0.rotation.x = sw * 0.6; l1.rotation.x = -sw * 0.6;
+        a0.rotation.x = -sw * 0.5;
+        if (a1.rotation.x < 3) a1.rotation.x = sw * 0.5;
+        m.position.y = Math.abs(sw) * 0.05;
+        m.rotation.y = -it.crowd.dir * (Math.PI / 2);
       } else if (it.kind === 'gas') {
         m.scale.setScalar(1 + Math.sin(t * 4 + it.z) * 0.08);
       } else if (it.ghost) {

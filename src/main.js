@@ -4,6 +4,7 @@ import { drawHud } from './hud.js';
 import { attachInput } from './input.js';
 import { loadKit } from './kit.js';
 import { loadPosters } from './posters.js';
+import { saveUploadedPosters, clearUploadedPosters, loadUploadedPosters } from './poster-store.js';
 import { initAudio, sfx, toggleMute, setPaused, setVoice } from './audio.js';
 import { Carousel, normalizeCharacter, carouselLayout, cardAt } from './carousel.js';
 
@@ -52,6 +53,23 @@ resize();
 
 loadKit();
 loadPosters();
+
+// Poster picker (start screen only). Posters load at startup, so a reload applies the change.
+const posterUi = document.getElementById('poster-ui');
+const posterFile = document.getElementById('poster-file');
+const posterReset = document.getElementById('poster-reset');
+loadUploadedPosters().then((list) => { posterReset.hidden = !list.length; });
+posterFile.addEventListener('change', async () => {
+  try { if (await saveUploadedPosters(posterFile.files)) location.reload(); } catch { /* storage unavailable */ }
+  posterFile.value = '';
+});
+posterReset.addEventListener('click', async () => { await clearUploadedPosters(); location.reload(); });
+let lastState = null;
+function syncPosterUi() {
+  if (game.state === lastState) return;
+  lastState = game.state;
+  posterUi.hidden = game.state !== 'menu';
+}
 
 const qs0 = new URLSearchParams(location.search);
 if (qs0.has('resettut')) { try { localStorage.removeItem(TUT_KEY); } catch { /* ignore */ } }
@@ -155,6 +173,7 @@ function frame(now) {
   drainEvents();
   lathiHits();
   dial.update(dt);
+  syncPosterUi();
   syncCharacter();
   stage3d.menuSlide = dial.lag;
   stage3d.render(game, dt);
@@ -176,6 +195,13 @@ Promise.race([fontLoad, new Promise((r) => setTimeout(r, 1500))]).then(startLoop
 const qs = new URLSearchParams(location.search);
 if (qs.has('autostart')) {
   applyIntent(game, 'start');
+  if (qs.has('stampede')) { // dev: spawn a stampede right away
+    const sp = game.spawner;
+    const rng = sp.rng;
+    sp.rng = () => 0.46;
+    sp.spawnPattern(game.stage, 0.5);
+    sp.rng = rng;
+  }
   for (let i = 0, n = Number(qs.get('skip')) * 60 || 0; i < n; i++) step(game, STEP);
   if (qs.has('tut')) showTutorial(game, qs.get('tut'), true);
   if (qs.has('over')) { game.state = 'over'; game.overT = Number(qs.get('over')) || 0; }
