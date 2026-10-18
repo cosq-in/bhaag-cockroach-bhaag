@@ -57,6 +57,7 @@ const qs0 = new URLSearchParams(location.search);
 if (qs0.has('resettut')) { try { localStorage.removeItem(TUT_KEY); } catch { /* ignore */ } }
 const game = createGame(Math.random, loadHi(), loadSeen());
 
+if (qs0.has('clock')) stage3d.clock = Number(qs0.get('clock')) || 0; // dev: jump to a menu playlist slot
 const dial = new Carousel(new URLSearchParams(location.search).get('char') ?? loadChar());
 let shownChar = null;
 function syncCharacter() {

@@ -89,7 +89,7 @@ export class Stage3D {
     root.add(model);
     const mixer = new THREE.AnimationMixer(model);
     const find = (n) => kit.hero.animations.find((a) => a.name === n);
-    return { root, mixer, actions: makeActions(mixer, find('run_loop') ?? kit.hero.animations[0], find('idle_loop')) };
+    return { root, mixer, kind: 'cockroach', actions: makeActions(mixer, find('run_loop') ?? kit.hero.animations[0], [find('idle_loop')]) };
   }
 
   // Dress the CC0 Kenney mini character as a khaki-clad constable with cap and lathi.
@@ -187,22 +187,30 @@ export class Stage3D {
     this.hero.group.visible = !active;
     this.clock = (this.clock ?? 0) + dt;
     const menu = g.state === 'menu';
-    if (active) setHeroMode(active, menu ? 'dance' : 'run');
+    if (active) setHeroMode(active, menu ? 'dance' : g.state === 'over' ? 'over' : 'run', this.clock);
     const hn = this.heroRoot ?? this.hero.group;
     hn.position.set(x, p.y, 0);
     hn.rotation.z = (p.visualLane - p.lane) * 0.35;
     hn.rotation.x = p.vy > 0.5 ? -0.25 : p.vy < -0.5 ? 0.2 : 0;
     hn.visible = g.state === 'over' || !(p.graceT > 0 && Math.floor(g.t * 20) % 2);
     if (this.heroRoot) {
-      if (g.state === 'over') {
+      const bug = active.kind === 'cockroach';
+      if (g.state === 'over' && !bug) {
+        // Humanoid heroes keep their proportions: play the hurt clip and flinch on each lathi hit.
+        const hit = Math.abs(Math.sin(g.overT * (Math.PI / 0.55)));
+        this.heroRoot.scale.set(1, 1, 1);
+        hn.rotation.z = Math.sin(g.overT * 38) * 0.06 * hit;
+        hn.position.y = 0;
+        this.heroMixer.timeScale = 1;
+      } else if (g.state === 'over') {
         const hit = Math.abs(Math.sin(g.overT * (Math.PI / 0.55)));
         this.heroRoot.scale.set(1.15, 0.45 + 0.12 * hit, 1.15);
         hn.rotation.z = 0.5 + Math.sin(g.overT * 38) * 0.08 * hit;
         hn.position.y = 0;
         this.heroMixer.timeScale = 0.05;
       } else {
-        this.heroRoot.scale.set(1, p.sliding ? 0.6 : 1, 1);
-        this.heroMixer.timeScale = g.state === 'menu' ? 0.7 : g.state === 'play' && p.grounded ? 1 : 0.3;
+        this.heroRoot.scale.set(1, p.sliding ? (bug ? 0.6 : 0.8) : 1, 1);
+        this.heroMixer.timeScale = bug ? (menu ? 0.7 : g.state === 'play' && p.grounded ? 1 : 0.3) : 1;
       }
       this.heroMixer.update(dt);
     } else {
@@ -210,8 +218,9 @@ export class Stage3D {
     }
     if (menu) {
       // Start-screen showpiece: hop and sway (facing the camera) on top of the dance clip.
-      hn.position.set((this.menuSlide ?? 0) * -2.6, Math.abs(Math.sin(this.clock * 5)) * 0.18, 0);
-      hn.rotation.set(0, Math.PI + Math.sin(this.clock * 1.6) * 0.8, Math.sin(this.clock * 5) * 0.08);
+      const bug = this.heroRoot && active?.kind === 'cockroach';
+      hn.position.set((this.menuSlide ?? 0) * -2.6, bug ? Math.abs(Math.sin(this.clock * 5)) * 0.18 : 0, 0);
+      hn.rotation.set(0, Math.PI + Math.sin(this.clock * 1.2) * (bug ? 0.8 : 0.2), bug ? Math.sin(this.clock * 5) * 0.08 : 0);
       hn.scale.setScalar(this.charId === 'cockroach' ? 0.95 : 1.2);
       hn.visible = true;
       if (this.heroMixer) this.heroMixer.timeScale = 1;

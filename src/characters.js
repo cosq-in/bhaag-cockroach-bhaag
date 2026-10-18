@@ -66,25 +66,35 @@ export function buildMiniHero(id, gltf) {
   root.add(model);
   const mixer = new THREE.AnimationMixer(model);
   const find = (n) => gltf.animations.find((a) => a.name === n);
-  return { root, mixer, actions: makeActions(mixer, find('sprint') ?? gltf.animations[0], find('emote-yes') ?? find('idle')) };
+  return { root, mixer, kind: 'mini', actions: makeActions(mixer, find('sprint') ?? gltf.animations[0], [find('emote-yes') ?? find('idle')], find('die')) };
 }
 
-// Run and start-screen dance actions; setHeroMode() cross-fades between them.
-export function makeActions(mixer, runClip, danceClip) {
-  const run = runClip ? mixer.clipAction(runClip) : null;
-  const dance = danceClip ? mixer.clipAction(danceClip) : null;
-  return { run, dance, mode: null };
+// Actions per hero: run, a start-screen playlist (`menu`), and an optional `over` pose for the detention scene.
+// setHeroMode() cross-fades between them; the playlist advances every MENU_SLOT seconds.
+const MENU_SLOT = 4;
+
+export function makeActions(mixer, runClip, menuClips, overClip) {
+  const act = (c) => (c ? mixer.clipAction(c) : null);
+  const menu = menuClips.filter(Boolean).map(act);
+  return { run: act(runClip), menu, over: act(overClip), current: null, mode: null, slot: -1 };
 }
 
-export function setHeroMode(hero, mode) {
+export function setHeroMode(hero, mode, clock = 0) {
   const a = hero.actions;
-  if (!a || a.mode === mode) return;
-  const next = (mode === 'dance' ? a.dance : a.run) ?? a.run ?? a.dance;
-  const prev = a.mode === 'dance' ? a.dance : a.run;
+  if (!a) return;
+  let slot = -1;
+  let next = a.run;
+  if (mode === 'dance' && a.menu.length) {
+    slot = Math.floor(clock / MENU_SLOT) % a.menu.length;
+    next = a.menu[slot];
+  } else if (mode === 'over') next = a.over ?? a.run;
+  if (a.mode === mode && a.slot === slot) return;
   a.mode = mode;
-  if (!next) return;
+  a.slot = slot;
+  if (!next || next === a.current) return;
   next.reset().play();
-  if (prev && prev !== next) next.crossFadeFrom(prev, 0.2, false);
+  if (a.current) next.crossFadeFrom(a.current, 0.25, false);
+  a.current = next;
 }
 
 // Skinned meshes report bind-pose geometry bounds that can disagree with the rig, so size from the bones:
@@ -108,8 +118,8 @@ export function fitToBones(model, height) {
 //   yaw: extra turn (radians) for models that face another way; hide: node names to hide (outfit/face variants);
 //   run / dance: animation-name patterns.
 const FILE_CFG = {
-  luffy: { yaw: 0, hide: /face_(attack|damage)|ele_arm|sp_fore_arm|hand_open|shirts_ura/, run: /_run$/, dance: /_victory_lp$|_opening$|_idle_a$/ },
-  spiderman: { yaw: 0 },
+  luffy: { yaw: 0, hide: /face_(attack|damage)|ele_arm|sp_fore_arm|hand_open|shirts_ura/, run: /_run$/, menu: [/_opening$/, /_victory_lp$/, /_idlehome_a$/], over: /_lose_lp$/ },
+  spiderman: { yaw: 0, run: /^run$/, menu: [/^stand$/, /^mixamo\.com$/, /^starfeRight$/], over: /^stand$/ },
 };
 
 // Any dropped-in character GLB: fitted to hero height, turned to run away from the camera.
@@ -124,6 +134,7 @@ export function buildFileHero(id, gltf) {
   const mixer = new THREE.AnimationMixer(model);
   const find = (re) => re && gltf.animations.find((a) => re.test(a.name));
   const run = find(cfg.run) ?? find(/run|sprint|walk/i) ?? gltf.animations[0];
-  const dance = find(cfg.dance) ?? find(/dance|emote|idle|wave/i) ?? run;
-  return { root, mixer, kind: 'file', actions: makeActions(mixer, run, dance) };
+  const menu = (cfg.menu ?? []).map(find);
+  if (!menu.some(Boolean)) menu.push(find(/dance|emote|idle|wave/i) ?? run);
+  return { root, mixer, kind: 'file', actions: makeActions(mixer, run, menu, find(cfg.over)) };
 }
