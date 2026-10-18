@@ -13,6 +13,11 @@ export function fitSize(w, h, max = MAX_SIDE) {
   return { w: Math.max(1, Math.round(w * k)), h: Math.max(1, Math.round(h * k)) };
 }
 
+// New picks are added to the saved ones; past the cap the oldest are dropped.
+export function mergePosters(existing, added, max = MAX_POSTERS) {
+  return [...existing, ...added].slice(-max);
+}
+
 // Raster images only; SVG is excluded on purpose.
 export function acceptable(file) {
   return /^image\/(png|jpeg|webp|gif|avif)$/.test(file.type) && file.size <= MAX_FILE_BYTES;
@@ -71,8 +76,11 @@ export async function saveUploadedPosters(files) {
   const db = await open();
   const tx = db.transaction(STORE, 'readwrite');
   const st = tx.objectStore(STORE);
-  st.clear();
-  good.forEach((b) => st.add(b));
+  const all = st.getAll();
+  all.onsuccess = () => {
+    st.clear();
+    mergePosters(all.result ?? [], good).forEach((b) => st.add(b));
+  };
   await done(tx);
   return good.length;
 }

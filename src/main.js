@@ -58,7 +58,11 @@ loadPosters();
 const posterUi = document.getElementById('poster-ui');
 const posterFile = document.getElementById('poster-file');
 const posterReset = document.getElementById('poster-reset');
-loadUploadedPosters().then((list) => { posterReset.hidden = !list.length; });
+const posterLabel = document.querySelector('label[for="poster-file"]');
+loadUploadedPosters().then((list) => {
+  posterReset.hidden = !list.length;
+  if (list.length) posterLabel.textContent = `Add more posters (${list.length}/12)`;
+});
 posterFile.addEventListener('change', async () => {
   try { if (await saveUploadedPosters(posterFile.files)) location.reload(); } catch { /* storage unavailable */ }
   posterFile.value = '';
