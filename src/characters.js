@@ -86,3 +86,21 @@ export function setHeroMode(hero, mode) {
   next.reset().play();
   if (prev && prev !== next) next.crossFadeFrom(prev, 0.2, false);
 }
+
+// Any dropped-in character GLB: fitted to hero height, turned to run away from the camera.
+// `yaw` fixes models that face a different way (radians); animations are used if the file has them.
+export function buildFileHero(gltf, yaw = 0) {
+  const model = gltf.scene;
+  const size = new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3());
+  model.scale.setScalar(1.8 / size.y);
+  const b = new THREE.Box3().setFromObject(model);
+  model.position.set(-(b.min.x + b.max.x) / 2, -b.min.y, -(b.min.z + b.max.z) / 2);
+  model.rotation.y = Math.PI + yaw;
+  const root = new THREE.Group();
+  root.add(model);
+  const mixer = new THREE.AnimationMixer(model);
+  const find = (re) => gltf.animations.find((a) => re.test(a.name));
+  const run = find(/run|sprint|walk/i) ?? gltf.animations[0];
+  const dance = find(/dance|emote|idle|wave/i) ?? run;
+  return { root, mixer, kind: 'file', actions: makeActions(mixer, run, dance) };
+}

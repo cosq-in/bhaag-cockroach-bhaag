@@ -9,7 +9,7 @@ const FILES = {
 };
 
 const models = new Map();
-export const kit = { version: 0, hero: null, cop: null, mini: {}, has: (prefix) => [...models.keys()].some((k) => k.startsWith(prefix)) };
+export const kit = { version: 0, hero: null, cop: null, mini: {}, custom: {}, has: (prefix) => [...models.keys()].some((k) => k.startsWith(prefix)) };
 export const CITY = FILES.city.map((n) => `city/${n}`);
 
 export async function loadKit() {
@@ -31,6 +31,10 @@ export async function loadKit() {
     // One glTF instance per costumed hero (each is dressed in place, so they cannot share a scene graph).
     for (const id of ['spiderman', 'luffy']) {
       jobs.push(loader.loadAsync('assets/models/cop/cop.glb').then((g) => { kit.mini[id] = g; }).catch(() => {}));
+    }
+    // Optional dropped-in character models (assets/models/<id>/<id>.glb); the costumed rig is used if absent.
+    for (const id of ['spiderman', 'luffy']) {
+      jobs.push(loader.loadAsync(`assets/models/${id}/${id}.glb`).then((g) => { kit.custom[id] = g; }).catch(() => {}));
     }
     await Promise.all(jobs);
   } catch { /* procedural fallbacks stay in place */ }

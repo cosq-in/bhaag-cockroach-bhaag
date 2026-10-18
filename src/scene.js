@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { mat, canvasTex, makeHero, makeInspector } from './models.js';
 import { WorldView, Scenery, RoadDressing, laneX } from './world-view.js';
 import { kit } from './kit.js';
-import { buildMiniHero, makeActions, setHeroMode } from './characters.js';
+import { buildFileHero, buildMiniHero, makeActions, setHeroMode } from './characters.js';
 
 const fovFor = (aspect) => (aspect < 1 ? 78 : 62);
 
@@ -66,9 +66,12 @@ export class Stage3D {
   // Build (once) the rigged model for a character; null until its asset has loaded.
   ensureHero(id) {
     this.heroes ??= {};
-    if (this.heroes[id]) return this.heroes[id];
+    const have = this.heroes[id];
+    if (have && !(have.kind !== 'file' && id !== 'cockroach' && kit.custom[id])) return have;
+    if (have) { this.scene.remove(have.root); delete this.heroes[id]; }
     let built = null;
     if (id === 'cockroach') built = this.buildKitHero();
+    else if (kit.custom[id]) built = buildFileHero(kit.custom[id]);
     else built = buildMiniHero(id, kit.mini[id]);
     if (built) {
       this.scene.add(built.root);
@@ -214,7 +217,7 @@ export class Stage3D {
       // Start-screen showpiece: hop and sway (facing the camera) on top of the dance clip.
       hn.position.set(0, Math.abs(Math.sin(this.clock * 5)) * 0.18, 0);
       hn.rotation.set(0, Math.PI + Math.sin(this.clock * 1.6) * 0.8, Math.sin(this.clock * 5) * 0.08);
-      hn.scale.set(1.35, 1.35, 1.35);
+      hn.scale.set(1.1, 1.1, 1.1);
       hn.visible = true;
       if (this.heroMixer) this.heroMixer.timeScale = 1;
     } else {
@@ -269,9 +272,9 @@ export class Stage3D {
       const py = this.camY + (Math.random() - 0.5) * shake;
       // Menu: close front-on shot of the hero, framed in the upper half so the dial sits below.
       const half = (fovFor(this.camera.aspect) * Math.PI) / 360;
-      const axis = Math.atan((1.4 - 1.1) / 5.6) + Math.atan(0.2 * Math.tan(half));
-      const mlookY = 1.4 - 5.6 * Math.tan(axis);
-      this.camera.position.set(px * (1 - mb), py + (1.4 - py) * mb, 8 + (5.6 - 8) * mb);
+      const axis = Math.atan((1.9 - 1.0) / 10) + Math.atan(0.2 * Math.tan(half));
+      const mlookY = 1.9 - 10 * Math.tan(axis);
+      this.camera.position.set(px * (1 - mb), py + (1.9 - py) * mb, 8 + (10 - 8) * mb);
       this.camera.lookAt(x * 0.5 * (1 - mb), 1.4 + p.y * 0.45 + (mlookY - 1.4 - p.y * 0.45) * mb, -12 * (1 - mb));
     }
     const baseFov = fovFor(this.camera.aspect) + Math.min(10, Math.max(0, (g.speed - 30) / 4));
